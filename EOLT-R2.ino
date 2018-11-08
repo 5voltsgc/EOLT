@@ -131,6 +131,8 @@ boolean userChanged = true;
 //====================Global Varibles=======================
 int editingRow = 0;
 boolean readyToTest = false;
+const int testingLoopCount = 500;
+
 
 //====================PartNumbers=======================
 const byte PN_ROWS = 10; //for Rows,  change this number to match the count of rows - 10 rows equals 10 rows starting count from 1.  As in 1,2,3,4,5,6,7,8,9,10

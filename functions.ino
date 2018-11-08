@@ -47,8 +47,8 @@ void updateLCD() {
         if (UUTserialNumber.length() == maxSerialNumberLength) {
           lcd.setCursor(0, 3);
           lcd.print("GREEN BTN TO START");
-          
-          
+          readyToTest = true;  //use this to verify 6 digits are placed in the serial number spot         
+          testSensors();
         }
         break;
     }
