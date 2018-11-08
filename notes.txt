@@ -1,0 +1,46 @@
+/*The EOLT utilizes a circuit of magnets - large steel back plane that is 3/4" X 6" X 24".  Two magnets placed on one
+  side about 14" apart.  A thin steel plate 1/4" X 4" X 18"  with a defect - a channel cut on one side, 1/8" deep, 1/4"
+  wide across the width.  The thin steel defect plate, is attached to a timing belt on each end, that is connected to a
+  NEMA 23 stepper motor that will move the plate back and forth over bearings and a 3D printed track.
+
+  To drive the stepper we have a DQ542MA microstep driver.  To maximize torque and precision, the driver is set to 400 pulses per revolution.
+
+  There are a two strings of Neopixels - 60 each string. These Neopixels are the RGBW type (Red, Gree, Blue, White).
+  The neopixels are to have several states to indicate status:
+  OFF -  Timed Out
+  BLUE - Testing, and a progress indicator, meaning the white LEDs will change to blue from one end to the other in proportion to
+  how much of the test is completed.
+  WHITE - Idle
+  RED - Failed Test
+  Green - Passed Test
+
+
+  An Arduino MEGA is used since it has more memeory than the UNO.  We are using libraries (SD, Neopixels, AccellStepper) and Arrays that are large, so large that just the SD library fills up almost 75%
+
+  At the end of the test, completion of the defect plate moving to the end, results PASS/FAIL are given to the operator before returning home.
+
+  The opertor will input user information pertaining to the Unit Unter Test:
+  User Name, Serial Number, Part Number.
+
+  User name comes from a preprogrammed array
+
+  The Part numbers also comes from a preprogrammed array that will hold pass fail criteria, heads and Halls per head.
+  -maxUpper
+  -maxLower
+  -minUpper
+  -minLower
+  -diffUpper
+  -diffLower
+
+  The SD Card will record the test results, in two forms - Long and Consolidated
+  The Long, will be a HALL reading from each hall for each step/iteration of the test
+  The Consolidated will just list the Recored Max, Recorded Min, Difference, and if it passed or failed
+
+
+  Notes on Accelstepper.h
+   setAcceleration()  The desired acceleration in steps per second per second. Must be > 0.0. This is an EXSPENSIVE call since it requires a square root to be calculated. Dont call more ofthen than needed
+   setMaxSpeed() The desired maximum speed in steps per second. Must be > 0. Caution: Speeds that exceed the maximum speed supported by the processor may Result in non-linear accelerations and decelerations.
+   speed() - Returns the most recent speed in steps per second
+   The fastest motor speed that can be reliably supported is about 4000 steps per second at a clock frequency of 16 MHz on Arduino such as Uno etc, however to get the most torque that number should remain under 1000.
+   Parameters  AccelStepper stepperX(1, 2, 3);  1 = Driver, 2 = Uno pin for Step, 3 = Uno pin for Direction
+*/

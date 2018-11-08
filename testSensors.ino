@@ -1,12 +1,6 @@
-void testSensors(String user,  ) {
-  /*Test sensors consists of
-
-  */
-
-
-  Serial.print(user);
-  Serial.print(",");
-  Serial.println(partNumber);
-  Serial.print(",");
+void testSensors() {
+  if (readyToTest == true && buttonStateGreen == true) {
+    Serial.print("Testing");
+  }
 
 }
