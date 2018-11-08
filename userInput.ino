@@ -39,6 +39,7 @@ void userInput() {
         }
         userChanged = true;
         operatorCounter--;
+        break;
 
       case 1:
         if (selectedPart <= 0) {

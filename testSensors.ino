@@ -19,13 +19,20 @@ void testSensors() {
     int hls;
     int totalHeads = partNumber[selectedPart][3];
     int totalHalls = partNumber[selectedPart][2];
+    int highMax = partNumber[selectedPart][8];
+    int highMin = partNumber[selectedPart][9];
 
 
 
-    Serial.print("total heads = ");
-    Serial.println(totalHeads); 
+    Serial.print("\ntotal heads = ");
+    Serial.println(totalHeads);
     Serial.print("total halls = ");
     Serial.println(totalHalls);
+    Serial.print(" max: ");
+    Serial.println(highMax);
+    Serial.print(" min: ");
+    Serial.println(highMin);
+
 
 
     for (ml = 0; ml < testingLoopCount; ml++) {
@@ -39,28 +46,25 @@ void testSensors() {
 
         //=====================Halls Loop Testing=================
         for (hls = 0; hls < totalHalls; hls++) {
-          Serial.print(hds);
-          Serial.print(" * ");
-          Serial.print(totalHeads-1);//Zero indexed
-          Serial.print(" + ");
-          Serial.print(hds);
-          Serial.print(" = ");
-          Serial.println((hds * (totalHeads-1)) + hls);
-
-
-
-
-//          Serial.print(hds * totalHeads + hls);
-//          Serial.print(", ");
-
+          //          Serial.print(hds);
+          //          Serial.print(" * ");
+          //          Serial.print(totalHeads - 1); //Zero indexed
+          //          Serial.print(" + ");
+          //          Serial.print(hds);
+          //          Serial.print(" = ");
+          //          Serial.print((hds * (totalHeads - 1)) + hls);
+          //          Serial.print(" -  Random Sensor reading: ");
+          //          Serial.println(random(highMin, highMax));
         }
       }
-      Serial.print("Main Loop Count: ");
-      Serial.println(ml);
+      //      Serial.print("Main Loop Count: ");
+      //      Serial.println(ml);
     }
-   UUTserialNumber = "";
-   readyToTest = false;
 
+    UUTserialNumber = "";
+    readyToTest = false;
+    lcdChanged = true;
+    Serial.println("Done");
 
 
 
