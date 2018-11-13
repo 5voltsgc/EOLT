@@ -40,6 +40,9 @@
   Created November 5, 2018
   By Jeff Watts
 */
+
+
+
 // ====================for SD Card====================
 #include <SD.h>
 
@@ -131,7 +134,7 @@ boolean userChanged = true;
 //====================Global Varibles=======================
 int editingRow = 0;
 boolean readyToTest = false;
-const int testingLoopCount = 500;
+const int testingLoopCount = 50;
 
 
 //====================PartNumbers=======================
@@ -140,20 +143,20 @@ const byte PN_COLS = 15; //four columns
 
 //Make the array in excel and export as a csv file with these headers
 //0-Part Numbers,1-Count Halls,2-halls/head,3-# heads,4-Selected,5-addressed,6-address lines,7-# analog lines,8-highMax,9-highMin,10-lowMax,11-lowMin,12-diffMax,13-diffLow
-long partNumber[PN_ROWS][PN_COLS] = {  
+long partNumber[PN_ROWS][PN_COLS] = {
   {107287, 8, 2, 4, 1, 0, 4, 2, 1000, 700, -600, -900, 1450, 1750},
-  {107297, 8, 2, 4, 1, 0, 4, 2, 1000, 700, -600, -900, 1450, 1750},  
-  {108144, 8, 2, 4, 1, 0, 4, 2, 1000, 700, -600, -900, 1450, 1750},  
+  {107297, 8, 2, 4, 1, 0, 4, 2, 1000, 700, -600, -900, 1450, 1750},
+  {108144, 8, 2, 4, 1, 0, 4, 2, 1000, 700, -600, -900, 1450, 1750},
   {108150, 8, 2, 4, 1, 0, 4, 2, 1000, 700, -600, -900, 1450, 1750},
   {112497, 6, 2, 3, 1, 0, 3, 2, 1000, 700, -600, -900, 1450, 1750},
   {121248, 12, 3, 4, 1, 0, 4, 3, 1000, 700, -600, -900, 1450, 1750},
   {121250, 18, 6, 3, 0, 1, 3, 3, 1000, 700, -600, -900, 1450, 1750},
   {121334, 15, 5, 3, 0, 1, 3, 3, 1000, 700, -600, -900, 1450, 1750},
-  {121335, 15, 5, 3, 0, 1, 3, 3, 1000, 700, -600, -900, 1450, 1750},  
+  {121335, 15, 5, 3, 0, 1, 3, 3, 1000, 700, -600, -900, 1450, 1750},
   {121791, 12, 6, 2, 0, 1, 3, 2, 1000, 700, -600, -900, 1450, 1750}
 };
 
-int selectedPart = 1;
+int selectedPart = 2;
 int partCounter = 0;
 
 //====================LCD Screen=======================
@@ -208,6 +211,19 @@ void setup() {
   // set up the LCD's number of columns and rows:
   lcd.begin(20, 4);
   lcd.clear();
+  // ====================Software Version====================
+  String softwareVersion = "0.0.0.1"; // update this as the program changes
+  String softwareDate = "11/13/2018"; // update this as the program changes
+
+  lcd.print("Software Date:");
+  lcd.setCursor(0, 1);//Column, Row (Starts counting at 0)
+  lcd.print(softwareDate);
+  lcd.setCursor(0, 2);//Column, Row (Starts counting at 0)
+  lcd.print("Software Verision:");
+  lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
+  lcd.print(softwareVersion);
+  delay(4000);
+  lcd.clear();
   lcd.blink();
 }
 
@@ -216,6 +232,9 @@ void loop() {
   userInput();
   updateLCD();
   serialNumberKeyPad();
+
+  //=============================================remove testing when finished debugging
+  testSensors();
 }
 
 

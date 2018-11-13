@@ -17,15 +17,21 @@ void testSensors() {
     int ml;
     int hds;
     int hls;
+    int thalls;
     int totalHeads = partNumber[selectedPart][3];
-    int totalHalls = partNumber[selectedPart][2];
+    int totalHalls = partNumber[selectedPart][1];
+    int hallsPerHead = partNumber[selectedPart][2];
     int highMax = partNumber[selectedPart][8];
     int highMin = partNumber[selectedPart][9];
 
 
 
+
+
     Serial.print("\ntotal heads = ");
     Serial.println(totalHeads);
+    Serial.print("Halls per Head = ");
+    Serial.println(hallsPerHead);
     Serial.print("total halls = ");
     Serial.println(totalHalls);
     Serial.print(" max: ");
@@ -39,32 +45,41 @@ void testSensors() {
 
       //=====================head Loop Testing=================
 
-      for (hds = 0; hds < totalHeads; hds++) {
-        //        Serial.print("head Loop Count: ");
-        //        Serial.println(hds);
+      for (thalls = 0; thalls < totalHalls; thalls++) {
 
 
-        //=====================Halls Loop Testing=================
-        for (hls = 0; hls < totalHalls; hls++) {
-          //          Serial.print(hds);
-          //          Serial.print(" * ");
-          //          Serial.print(totalHeads - 1); //Zero indexed
-          //          Serial.print(" + ");
-          //          Serial.print(hds);
-          //          Serial.print(" = ");
-          //          Serial.print((hds * (totalHeads - 1)) + hls);
-          //          Serial.print(" -  Random Sensor reading: ");
-          //          Serial.println(random(highMin, highMax));
-        }
+
+        Serial.print(thalls);
+        Serial.print(" % ");
+        Serial.print(totalHeads); //Zero indexed
+        Serial.print(" = ");
+        Serial.print(thalls % totalHeads);
+        Serial.print("<- Head Number  :");
+        Serial.print(thalls);
+        Serial.print(" % ");
+        Serial.print(totalHalls);
+        Serial.print(" = ");
+        Serial.print(thalls % hallsPerHead);
+        Serial.println(" <-  Hall number ");
+
+
       }
-      //      Serial.print("Main Loop Count: ");
-      //      Serial.println(ml);
+      Serial.print("Main Loop Count: ");
+      Serial.println(ml);
+      Serial.println(testingLoopCount);
+      int percentComplete = (float(ml+1) / float(testingLoopCount))*100;
+      Serial.print(percentComplete);
+      Serial.println("% Complete");
     }
 
     UUTserialNumber = "";
     readyToTest = false;
     lcdChanged = true;
     Serial.println("Done");
+
+
+
+    delay(10000);
 
 
 
