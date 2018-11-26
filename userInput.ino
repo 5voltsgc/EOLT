@@ -5,10 +5,36 @@ void userInput() {
 
   */
 
-  buttonStateUp = digitalRead(buttonUp);
-  buttonStateDown = digitalRead(buttonDown);
-  buttonStateLeft = digitalRead(buttonLeft);
-  buttonStateRight = digitalRead(buttonRight);
+  
+  debouncerButtonUp.update();
+  debouncerButtonDown.update();
+  debouncerButtonLeft.update();
+  debouncerButtonRight.update();
+  debouncerButtonStart.update();
+
+
+  buttonStateStart = debouncerButtonStart.read();
+  buttonStateUp = debouncerButtonUp.read();
+  buttonStateDown = debouncerButtonDown.read();
+  buttonStateLeft = debouncerButtonLeft.read();
+  buttonStateRight = debouncerButtonRight.read();
+
+
+  
+
+  // ====================Start Button====================
+
+
+  
+  if (buttonStateStart == HIGH && readyToTest == true) {
+
+    testSensors();
+  }
+  else {
+    //lcd print press start button or enter serial number
+  }
+
+
 
   // ====================Up Button====================
 
@@ -29,7 +55,7 @@ void userInput() {
 
   // ====================Left Button====================
 
-  if (buttonStateLeft == true) {
+  if (buttonStateLeft == HIGH) {
     lcdChanged = true;
 
     switch (editingRow) {
@@ -48,7 +74,7 @@ void userInput() {
         else {
           selectedPart--;
         }
-        delay(100);
+        delay(300);
         break;
     }
   }
@@ -56,8 +82,8 @@ void userInput() {
 
   // ====================Right Button====================
   if (buttonStateRight) {
-    lcdChanged = true;
-    switch (editingRow) {      
+    lcdChanged = HIGH;
+    switch (editingRow) {
       case 0:
         if (operatorCounter >= countOperators - 1 ) {
           operatorCounter = 0;
@@ -75,9 +101,24 @@ void userInput() {
         else {
           selectedPart++;
         }
-        delay(100); // it appears to skip a few part numbers with a short press, i still want a long press to move multiples
+        delay(300); // it appears to skip a few part numbers with a short press, i still want a long press to move multiples
         break ;
     }
   }
-}
 
+  char key = keypad.getKey();
+
+  if (key != NO_KEY) {
+    editingRow = 2;
+    lcdChanged = true; //this is varible is set to true anytime a varible is changed
+
+    if (UUTserialNumber.length() > maxSerialNumberLength - 1 ) {
+      UUTserialNumber = char(key);
+    }
+    else
+    {
+      UUTserialNumber += char(key); //use " += " to concatenate
+    }
+  }
+
+}

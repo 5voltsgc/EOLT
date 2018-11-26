@@ -1,90 +1,37 @@
-void testSensors() {
-  if (readyToTest == true ) {
-    Serial.println("Testing");
-    Serial.println(selectedUser);
-    Serial.println(UUTserialNumber);
+void testSensors() {  //this is called at the userInput start button
 
 
-    Serial.println("\n\n0-Part Numbers,1-Count Halls,2-halls/head,3-# heads,4-Selected,5-addressed,6-address lines,7-# analog lines,8-highMax,9-highMin,10-lowMax,11-lowMin,12-diffMax,13-diffLow");
+  timedOut = false;
+  homeStepper();
 
-    for (int i = 0; i < PN_COLS - 1; i++) {
+  //================================== rapid move to starting test location =============================
+  stepperX.setMaxSpeed(1000.0);      //
+  stepperX.setAcceleration(5000.0);  // Set acceleration of stepper, from testing 10,000 was a good acceleration
+  stepperX.runToNewPosition(testStartLocation); //This is a blocking function, such that it doesn't go to the next step until complete
 
-      Serial.print(partNumber[selectedPart][i]);
-      Serial.print(", ");
-    }
+  Serial.print("Initializing SD card...");
 
-    //=====================Main Loop Testing=================
-    int ml;
-    int hds;
-    int hls;
-    int thalls;
-    int totalHeads = partNumber[selectedPart][3];
-    int totalHalls = partNumber[selectedPart][1];
-    int hallsPerHead = partNumber[selectedPart][2];
-    int highMax = partNumber[selectedPart][8];
-    int highMin = partNumber[selectedPart][9];
-
-
-
-
-
-    Serial.print("\ntotal heads = ");
-    Serial.println(totalHeads);
-    Serial.print("Halls per Head = ");
-    Serial.println(hallsPerHead);
-    Serial.print("total halls = ");
-    Serial.println(totalHalls);
-    Serial.print(" max: ");
-    Serial.println(highMax);
-    Serial.print(" min: ");
-    Serial.println(highMin);
-
-
-
-    for (ml = 0; ml < testingLoopCount; ml++) {
-
-      //=====================head Loop Testing=================
-
-      for (thalls = 0; thalls < totalHalls; thalls++) {
-
-
-
-        Serial.print(thalls);
-        Serial.print(" % ");
-        Serial.print(totalHeads); //Zero indexed
-        Serial.print(" = ");
-        Serial.print(thalls % totalHeads);
-        Serial.print("<- Head Number  :");
-        Serial.print(thalls);
-        Serial.print(" % ");
-        Serial.print(totalHalls);
-        Serial.print(" = ");
-        Serial.print(thalls % hallsPerHead);
-        Serial.println(" <-  Hall number ");
-
-
-      }
-      Serial.print("Main Loop Count: ");
-      Serial.println(ml);
-      Serial.println(testingLoopCount);
-      int percentComplete = (float(ml+1) / float(testingLoopCount))*100;
-      Serial.print(percentComplete);
-      Serial.println("% Complete");
-    }
-
-    UUTserialNumber = "";
-    readyToTest = false;
-    lcdChanged = true;
-    Serial.println("Done");
-
-
-
-    delay(10000);
-
-
-
-
-
+  if (!SD.begin(10)) {
+    Serial.println("initialization failed!");
+    while (1);
   }
+  Serial.println("initialization done.");
+
+  myFile = SD.open("test.txt", FILE_WRITE);
+  for ( int i = 0; i < testingLoopCount; i++) {
+    stepperX.runToNewPosition(testStartLocation + i);
+    randNumber = random(1000);
+    myFile.println(randNumber);
+  }
+  myFile.close();
+  stepperX.runToNewPosition(+10);
+  Serial.println("Test done - should not start ugain until green button pressed");
+
+  //code here for writing to SD card
+
+  delay(800);
+  digitalWrite(disableStepperDriverPin, HIGH); // High disables the stepper
+  homed = false;
+
 
 }

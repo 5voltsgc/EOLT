@@ -1,3 +1,5 @@
+
+
 /*
   Sketch End Of Line Tester - EOLT
 
@@ -45,6 +47,15 @@
 
 // ====================for SD Card====================
 #include <SD.h>
+#include <SPI.h>
+// set up variables using the SD utility library functions:
+Sd2Card card;
+SdVolume volume;
+SdFile root;
+const int chipSelect = 10; // Adafruit SD shields and modules: pin 10
+File myFile;
+
+long randNumber; //===============================================for testing====================================
 
 // ====================for stepper====================
 // Library created by Mike McCauley at http://www.airspayce.com/mikem/arduino/AccelStepper/
@@ -56,12 +67,13 @@ const byte homeSwitchNO = 35;// Normally open position of switch
 bool disableStepper = false;  // varible to disable the stepper after timed out
 
 // ====================Stepper Travel Variables====================
-// Used to store test cycle distance 20 tooth pulley Dia=.509 - circumference = 1.25", pulses per revolution=400, travel distance=5.5"
-long cyclePulses = ((5.5 / (1.25 * 3.14)) * 400); //((5.5/(1.25 * 3.14)) * 400) = 560.5 (pulses for test travel)
-long initial_homing = -1; // Used to Home Stepper at startup
+// Used to store test cycle distance 20 tooth pulley Dia=1.5 or circumference = 4.71", pulses per revolution=1600, travel distance=5.5"
+long cyclePulses = ((5 / (1.25 * 3.14)) * 1600); //((5.5/(1.25 * 3.14)) * 1600) = 1698 (pulses for test travel)
+long testStartLocation = ((1.5 / (1.25 * 3.14)) * 1600); //((Distance inches /(Pulley Diameter1.25 * PI3.14)) * 1600 pulses per rev)
+long initial_homing = 1; // Used to Home Stepper, when homing, the stepper moves this many steps, in each loop THEN looks for the limit switch, so don't make too big
 bool startCycleTest = false;
-bool startCycleTestButton = false;
 bool homed = false;  //varible to indicate homed
+const int testingLoopCount = 950;
 
 // ====================AccelStepper Setup====================
 AccelStepper stepperX(1, stepperStepPin, stepperDirectionPin);   // 1 = Driver interface
@@ -84,17 +96,34 @@ const long interval = 60000;           // interval at which to blink (millisecon
 unsigned long currentMillis;
 
 //====================Inputs / Outputs=======================
-const byte buttonUp = 40; //This is pulled down to ground by a 10K ohm resistor
-const byte buttonDown = 42; //This is pulled down to ground by a 10K ohm resistor
-const byte buttonLeft = 43; //This is pulled down to ground by a 10K ohm resistor
-const byte buttonRight = 41; //This is pulled down to ground by a 10K ohm resistor
+#include <Bounce2.h>
+
+
+const byte buttonUp = 49; //This is pulled down to ground by a 10K ohm resistor
+const byte buttonDown = 50; //This is pulled down to ground by a 10K ohm resistor
+const byte buttonLeft = 51; //This is pulled down to ground by a 10K ohm resistor
+const byte buttonRight = 52; //This is pulled down to ground by a 10K ohm resistor
 const byte buttonStart = 53; //This is pulled down to ground by a 10K ohm resistor
+
+
+
+
+
+Bounce debouncerButtonUp = Bounce();
+Bounce debouncerButtonDown = Bounce();
+Bounce debouncerButtonLeft = Bounce();
+Bounce debouncerButtonRight = Bounce();
+Bounce debouncerButtonStart = Bounce();
+
+
 
 boolean buttonStateUp;
 boolean buttonStateDown;
 boolean buttonStateLeft;
 boolean buttonStateRight;
-boolean buttonStateGreen;
+boolean buttonStateStart;
+
+
 
 
 //====================Users=======================
@@ -134,7 +163,7 @@ boolean userChanged = true;
 //====================Global Varibles=======================
 int editingRow = 0;
 boolean readyToTest = false;
-const int testingLoopCount = 50;
+
 
 
 //====================PartNumbers=======================
@@ -180,8 +209,10 @@ char keys[ROWS][COLS] = {
   {'*', '0', '#', 'D'}
 };
 
-byte rowPins[ROWS] = {47, 46, 45, 44}; //connect to the row pinouts of the keypad - four in a row
-byte colPins[COLS] = {39, 38, 49, 48}; //connect to the column pinouts of the keypad - four in a row
+byte rowPins[ROWS] = {41, 40, 39, 38}; //connect to the row pinouts of the keypad - four in a row
+byte colPins[COLS] = {45, 44, 43, 42}; //connect to the column pinouts of the keypad - four in a row
+//byte rowPins[ROWS] = {47, 46, 45, 44}; //connect to the row pinouts of the keypad - four in a row
+//byte colPins[COLS] = {39, 38, 49, 48}; //connect to the column pinouts of the keypad - four in a row
 Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 
 //====================Serial Number =======================
@@ -189,9 +220,6 @@ Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 String UUTserialNumber; //
 const byte maxSerialNumberLength = 6;
 const String serialnumberStartsWith = "B";
-
-
-
 
 
 void setup() {
@@ -205,6 +233,19 @@ void setup() {
   pinMode(buttonDown, INPUT);
   pinMode(buttonUp, INPUT);
 
+
+  debouncerButtonUp.attach(buttonUp);
+  debouncerButtonUp.interval(5); //interval in ms
+  debouncerButtonDown.attach(buttonDown);
+  debouncerButtonDown.interval(5);
+  debouncerButtonLeft.attach(buttonLeft);
+  debouncerButtonLeft.interval(2);
+  debouncerButtonRight.attach(buttonRight);
+  debouncerButtonRight.interval(2);
+  debouncerButtonStart.attach(buttonStart);
+  debouncerButtonStart.interval(2);
+
+
   pinMode(disableStepperDriverPin, OUTPUT);
   digitalWrite(disableStepperDriverPin, LOW);  // Low enables the stepper, high disables the stepper
 
@@ -212,8 +253,8 @@ void setup() {
   lcd.begin(20, 4);
   lcd.clear();
   // ====================Software Version====================
-  String softwareVersion = "0.0.0.1"; // update this as the program changes
-  String softwareDate = "11/13/2018"; // update this as the program changes
+  String softwareVersion = "0.0.0.2"; // update this as the program changes
+  String softwareDate = "11/21/2018"; // update this as the program changes
 
   lcd.print("Software Date:");
   lcd.setCursor(0, 1);//Column, Row (Starts counting at 0)
@@ -231,17 +272,5 @@ void loop() {
   // put your main code here, to run repeatedly:
   userInput();
   updateLCD();
-  serialNumberKeyPad();
 
-  //=============================================remove testing when finished debugging
-  testSensors();
 }
-
-
-
-
-
-
-
-
-
