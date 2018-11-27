@@ -40,12 +40,14 @@ void updateLCD() {
         lcd.setCursor(0, 3);
         lcd.print("KEYPAD FOR SERIAL#  ");
         lcd.setCursor(9 + UUTserialNumber.length(), 2);
+        readyToTest = false;
 
         if (UUTserialNumber.length() == maxSerialNumberLength) {
           lcd.setCursor(0, 3);
           lcd.print("GREEN BTN TO START");
           readyToTest = true;  //use this to verify 6 digits are placed in the serial number spot
         }
+
         break;
     }
   }
@@ -57,15 +59,15 @@ void updateLCD() {
 void homeStepper() {
   digitalWrite(disableStepperDriverPin, LOW);  // LOW enables the stepper, HIGH disables the stepper
   if (homed == false) {
-    
-    
+
+
     stepperX.setMaxSpeed(2000.0);      //Set max speed of stepper
     stepperX.setAcceleration(5000.0);  // Set acceleration of stepper
     stepperX.setCurrentPosition(0);    // Set the current postion as home position
     initial_homing = -1; //this changes based on if going backwards or forwards
 
     while ( digitalRead(homeSwitchNO) == false) {
-      
+
       stepperX.moveTo(initial_homing);
       initial_homing = initial_homing - 1; //moving more in each loop
       stepperX.run();   //Go to stepperX.moveTo position
@@ -77,7 +79,7 @@ void homeStepper() {
     initial_homing = 1;  //this changes based on if going backwards or forwards
 
     while ( digitalRead(homeSwitchNO) == true) {
-//      Serial.println("Stepper is movingclockwise to go to home . . . . . . . . . . . . . . . .");
+      //      Serial.println("Stepper is movingclockwise to go to home . . . . . . . . . . . . . . . .");
       stepperX.moveTo(initial_homing);
       initial_homing++;  //Decrement the go to postion by -1
       stepperX.run();   //Go to set postion
@@ -89,7 +91,7 @@ void homeStepper() {
 
 
 
-//    Serial.println("Homing is complete . . . . . . . . . . . . . . . .");
+    //    Serial.println("Homing is complete . . . . . . . . . . . . . . . .");
 
 
   }
@@ -120,8 +122,6 @@ void cycleFlatPlate() {
 
     colorWipe(strip.Color(0, 0, 0, 0), strip.Color(0, 0, 0, 255)); // Set colors to white for idle or homing
 
-
-
     delay(8000);
     digitalWrite(disableStepperDriverPin, HIGH);
   */
@@ -143,5 +143,35 @@ void colorWipe(uint32_t color1, uint32_t color2) {
   }
 
   strip.show();
+
+}
+
+
+
+
+
+void colorProgess(float percentageComplete) { // send an integer between 0 and 100
+  if (percentageComplete > 0 &&  percentageComplete < 1) { // error checking to verify the percent complete is between 0 and 100
+
+    int k = (percentageComplete * 56);
+
+    //    for (uint16_t j = 4; j < k; j++) {
+    //
+    //      strip.setPixelColor(j, 0, 0, 255, 0); // LED's 3 through 55
+    //      strip.setPixelColor(j + 60, 0, 0, 255, 0); // LED's 63 through 116
+    //    }
+    for (uint16_t j = 4; j < k; j++) {
+      strip.setPixelColor(j, 0, 0, 255, 0); // LED's 3 through 55
+    }
+
+    for (uint16_t j = 115; j > (119 - k) ; j--) {//j = starting point, 119-k count of led,
+      strip.setPixelColor(j, 0, 45, 255, 0); // LED's 3 through 55
+    }
+
+    strip.show();
+  }
+
+  // now update the progress
+
 
 }

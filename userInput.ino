@@ -5,35 +5,27 @@ void userInput() {
 
   */
 
-  
   debouncerButtonUp.update();
   debouncerButtonDown.update();
   debouncerButtonLeft.update();
   debouncerButtonRight.update();
   debouncerButtonStart.update();
 
+  buttonStateUp = debouncerButtonUp.rose();
+  buttonStateDown = debouncerButtonDown.rose();
+  buttonStateLeft = debouncerButtonLeft.rose();
+  buttonStateRight = debouncerButtonRight.rose();
+  buttonStateStart = debouncerButtonStart.rose();
 
-  buttonStateStart = debouncerButtonStart.read();
-  buttonStateUp = debouncerButtonUp.read();
-  buttonStateDown = debouncerButtonDown.read();
-  buttonStateLeft = debouncerButtonLeft.read();
-  buttonStateRight = debouncerButtonRight.read();
 
-
-  
-
+  if (buttonStateStart= HIGH) {
+    Serial.println("Green button has been pressed");
+  }
   // ====================Start Button====================
-
-
-  
-  if (buttonStateStart == HIGH && readyToTest == true) {
-
+  if (buttonStateStart == HIGH  && readyToTest == true ) {
     testSensors();
-  }
-  else {
-    //lcd print press start button or enter serial number
-  }
 
+  }
 
 
   // ====================Up Button====================
@@ -42,14 +34,12 @@ void userInput() {
     lcdChanged = true; //this is varible is set to true anytime a varible is changed
     editingRow = 0;  //0 is for first row user, 2 part number, 3 serial number
 
-
   }
 
   // ====================Down Button====================
   if (buttonStateDown == HIGH) {
     lcdChanged = true; //this is varible is set to true anytime a varible is changed
     editingRow = 1;  //0 is for first row user, 2 part number, 3 serial number
-
 
   }
 
@@ -58,8 +48,9 @@ void userInput() {
   if (buttonStateLeft == HIGH) {
     lcdChanged = true;
 
+
     switch (editingRow) {
-      case 0:
+      case 0:  //editing the operator line
         if (operatorCounter <= 0) {//0 is for user row
           operatorCounter = (countOperators);
         }
@@ -67,16 +58,16 @@ void userInput() {
         operatorCounter--;
         break;
 
-      case 1:
+      case 1: //editing the part number line
         if (selectedPart <= 0) {
           selectedPart = PN_ROWS - 1; //because we are looking at the index for zero number, not the count of rows
         }
         else {
           selectedPart--;
         }
-        delay(300);
         break;
     }
+    delay(100);// it appears to skip a few part numbers with a short press, I still want a long press to move multiples
   }
 
 
@@ -101,9 +92,9 @@ void userInput() {
         else {
           selectedPart++;
         }
-        delay(300); // it appears to skip a few part numbers with a short press, i still want a long press to move multiples
         break ;
     }
+    delay(100); // it appears to skip a few part numbers with a short press, I still want a long press to move multiples
   }
 
   char key = keypad.getKey();
@@ -114,6 +105,7 @@ void userInput() {
 
     if (UUTserialNumber.length() > maxSerialNumberLength - 1 ) {
       UUTserialNumber = char(key);
+
     }
     else
     {

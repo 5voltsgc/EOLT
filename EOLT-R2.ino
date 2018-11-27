@@ -92,7 +92,6 @@ Adafruit_NeoPixel strip = Adafruit_NeoPixel(numNeoPixels, neopixelsPin, NEO_GRBW
 //====================for Elasped time=======================
 bool timedOut = false;  //when timed out high disable stepper driver and neopixels
 unsigned long previousMillis = 0;        // will store last time timedOut was updated
-const long interval = 60000;           // interval at which to blink (milliseconds)  1 minute = 60,000 milliseconds, 10 min=600,000
 unsigned long currentMillis;
 
 //====================Inputs / Outputs=======================
@@ -127,7 +126,7 @@ boolean buttonStateStart;
 
 
 //====================Users=======================
-int countOperators = 24;
+const int countOperators = 24;
 char listUsers[24][11] = {
   "Anita",
   "Bruce",
@@ -155,10 +154,10 @@ char listUsers[24][11] = {
   "Wade",
 };
 
-int operatorCounter = 0; //used to hold the point in the array of users 0 equals the first user
+
 String selectedUser; // used to hold text of the selected User
 boolean userChanged = true;
-
+int operatorCounter;
 
 //====================Global Varibles=======================
 int editingRow = 0;
@@ -185,9 +184,9 @@ long partNumber[PN_ROWS][PN_COLS] = {
   {121791, 12, 6, 2, 0, 1, 3, 2, 1000, 700, -600, -900, 1450, 1750}
 };
 
-int selectedPart = 2;
-int partCounter = 0;
 
+int partCounter = 0;
+int selectedPart;
 //====================LCD Screen=======================
 // Connect via i2c, default address #0 (A0-A2 not jumpered)
 #include "Wire.h"
@@ -239,11 +238,11 @@ void setup() {
   debouncerButtonDown.attach(buttonDown);
   debouncerButtonDown.interval(5);
   debouncerButtonLeft.attach(buttonLeft);
-  debouncerButtonLeft.interval(2);
+  debouncerButtonLeft.interval(5);
   debouncerButtonRight.attach(buttonRight);
-  debouncerButtonRight.interval(2);
+  debouncerButtonRight.interval(5);
   debouncerButtonStart.attach(buttonStart);
-  debouncerButtonStart.interval(2);
+  debouncerButtonStart.interval(5);
 
 
   pinMode(disableStepperDriverPin, OUTPUT);
@@ -266,6 +265,11 @@ void setup() {
   delay(4000);
   lcd.clear();
   lcd.blink();
+
+  randomSeed(analogRead(0));
+  operatorCounter = random(countOperators); //used to hold the point in the array of users 0 equals the first user
+  selectedPart = random(PN_ROWS);//used to hold the point in the array of users 0 equals the first part number
+
 }
 
 void loop() {
