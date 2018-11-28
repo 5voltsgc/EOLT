@@ -1,7 +1,6 @@
 void testSensors() {  //this is called at the userInput start button
 
-  Serial.print(buttonStateStart);
-  Serial.print(readyToTest);
+
   timedOut = false;
   homeStepper();
 
@@ -32,31 +31,51 @@ void testSensors() {  //this is called at the userInput start button
   }
   Serial.println("initialization done.");
 
-  myFile = SD.open("121250/test.txt", FILE_WRITE);
+  String partNumberFolder = String((partNumber[selectedPart][0]));
+
+  if (!SD.exists(partNumberFolder)) {
+    SD.mkdir(partNumberFolder);
+    Serial.print("Made folder: ");
+    Serial.println(partNumberFolder);
+  }
+
+  String partNumberAndFolder = (partNumberFolder) + "/" + UUTserialNumber + ".txt";
+  myFile = SD.open(partNumberAndFolder , FILE_WRITE);
+  Serial.print("Opened folder and file: ");
+  Serial.println(partNumberAndFolder);
+
   currentMillis = millis();
   float percentComplete;
+  myFile.print("User Name: ");
+  myFile.println(selectedUser);
+  myFile.print("Part Number: ");
+  myFile.println(partNumberFolder);
+  myFile.print("Serial Number: ");
+  myFile.println(UUTserialNumber);
+  myFile.print("Date and Time to be added: ");
+
 
   for ( int i = 0; i < testingLoopCount; i++) {
-    percentComplete =((float(i) / float(testingLoopCount)));
+    percentComplete = ((float(i) / float(testingLoopCount)));
     colorProgess(percentComplete);
 
     stepperX.runToNewPosition(testStartLocation + i);
     randNumber = random(1000);
+    myFile.print(i);
+    myFile.print(" - ");
     myFile.println(randNumber);
   }
   long elapsedTimeMS = millis() - currentMillis;
   myFile.println(elapsedTimeMS);
   myFile.close();
   stepperX.runToNewPosition(+10);
-  Serial.println("Test done - should not start again until green button pressed");
+
 
   //code here for writing to SD card
+  previousMillis = millis(); // Reset the timer
 
-  delay(800);
-  digitalWrite(disableStepperDriverPin, HIGH); // High disables the stepper
-  homed = false;
-  Serial.print("the ready to test varible is set to :");
-  Serial.println(readyToTest);
+
+
 
 
 }

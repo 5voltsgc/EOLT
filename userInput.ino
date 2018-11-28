@@ -1,16 +1,10 @@
 void userInput() {
-  /*Write once to the LCD to screen the fields user, Part #, Serial number
-    Position the BLINKing curser in position of the user or part with the up or down buttons
-    Select the user or part number with the left or right buttons - when selected write it to a varible
-
-  */
-
+  // Update the debouncer and get the changed state
   debouncerButtonUp.update();
   debouncerButtonDown.update();
   debouncerButtonLeft.update();
   debouncerButtonRight.update();
-  debouncerButtonStart.update();
-
+  debouncerButtonStart.update();  
   buttonStateUp = debouncerButtonUp.rose();
   buttonStateDown = debouncerButtonDown.rose();
   buttonStateLeft = debouncerButtonLeft.rose();
@@ -18,7 +12,7 @@ void userInput() {
   buttonStateStart = debouncerButtonStart.rose();
 
 
-  if (buttonStateStart= HIGH) {
+  if (buttonStateStart == HIGH) {
     Serial.println("Green button has been pressed");
   }
   // ====================Start Button====================

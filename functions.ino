@@ -47,7 +47,6 @@ void updateLCD() {
           lcd.print("GREEN BTN TO START");
           readyToTest = true;  //use this to verify 6 digits are placed in the serial number spot
         }
-
         break;
     }
   }
@@ -67,7 +66,6 @@ void homeStepper() {
     initial_homing = -1; //this changes based on if going backwards or forwards
 
     while ( digitalRead(homeSwitchNO) == false) {
-
       stepperX.moveTo(initial_homing);
       initial_homing = initial_homing - 1; //moving more in each loop
       stepperX.run();   //Go to stepperX.moveTo position
@@ -79,53 +77,17 @@ void homeStepper() {
     initial_homing = 1;  //this changes based on if going backwards or forwards
 
     while ( digitalRead(homeSwitchNO) == true) {
-      //      Serial.println("Stepper is movingclockwise to go to home . . . . . . . . . . . . . . . .");
-      stepperX.moveTo(initial_homing);
-      initial_homing++;  //Decrement the go to postion by -1
+      stepperX.moveTo(initial_homing); //go home as defined in setup, it can be close to the microswitch of the plate in the middle
+      initial_homing++; //Decrement the go to postion by -1
       stepperX.run();   //Go to set postion
-      delay(1);   //A delay here but should be a millis function?
-
+      delay(1);         //A delay time enough to read the microswitch
     }
     stepperX.setCurrentPosition(0);    // reset the home position with it's current postion it is now homed - this also requires a setmaxSpeed and setAcceleration
     homed = true;
-
-
-
-    //    Serial.println("Homing is complete . . . . . . . . . . . . . . . .");
-
-
   }
 }
 
-void cycleFlatPlate() {
 
-  /*
-    colorWipe(strip.Color(0, 0, 0, 0), strip.Color(0, 0, 255, 0)); // Set colors to blue during cycle
-    digitalWrite(disableStepperDriverPin, LOW);  // Low enables the stepper, high disables the stepper
-    homed = false;
-    homeStepper();
-
-    Serial.println("Begining cycle - Going out . . . . . . . . . . . . . . . .");
-    stepperX.setMaxSpeed(448.0);      //Changed to 448 = 5 seconds of travel
-    stepperX.setAcceleration(10000.0);  // Set acceleration of stepper, from testing 10,000 was a good acceleration
-    stepperX.runToNewPosition(cyclePulses); //This is a blocking function, such that it doesn't go to the next step until complete
-
-
-    delay(8000);  // this is to stop the plate at the end of the stroke long enough for the operator to stop the test.  we only want to read one pass on the test.
-
-    Serial.println("going in. . . . . . . . . . . . . . . .");
-    stepperX.setMaxSpeed(1000.0);      //Set max speed of stepper, from testing 750 was a good speed  (Changed to 400 to identify variation in the test results)
-    stepperX.runToNewPosition(0); //This is a blocking function, such that it doesn't go to the next step until complete
-
-
-    previousMillis = currentMillis; // after a cycle reset the timed out feature
-
-    colorWipe(strip.Color(0, 0, 0, 0), strip.Color(0, 0, 0, 255)); // Set colors to white for idle or homing
-
-    delay(8000);
-    digitalWrite(disableStepperDriverPin, HIGH);
-  */
-}
 
 void colorWipe(uint32_t color1, uint32_t color2) {
 
@@ -141,37 +103,38 @@ void colorWipe(uint32_t color1, uint32_t color2) {
     strip.setPixelColor(j, color2); // LED's 3 through 55
     strip.setPixelColor(j + 60, color2); // LED's 63 through 116
   }
-
   strip.show();
-
 }
-
-
-
 
 
 void colorProgess(float percentageComplete) { // send an integer between 0 and 100
   if (percentageComplete > 0 &&  percentageComplete < 1) { // error checking to verify the percent complete is between 0 and 100
 
-    int k = (percentageComplete * 56);
-
-    //    for (uint16_t j = 4; j < k; j++) {
-    //
-    //      strip.setPixelColor(j, 0, 0, 255, 0); // LED's 3 through 55
-    //      strip.setPixelColor(j + 60, 0, 0, 255, 0); // LED's 63 through 116
-    //    }
-    for (uint16_t j = 4; j < k; j++) {
+    int k = (percentageComplete * 56); //I only want 56 neopixels to turn on and I need the percentage example: 10% of 56 = 5, (not 5.6 because it's an integer, it rounds down)
+    for (uint16_t j = 55; j > (58 - k); j--) {    //(Starting Neopixel to turn on; Where to stop ; Step )
       strip.setPixelColor(j, 0, 0, 255, 0); // LED's 3 through 55
     }
-
-    for (uint16_t j = 115; j > (119 - k) ; j--) {//j = starting point, 119-k count of led,
-      strip.setPixelColor(j, 0, 45, 255, 0); // LED's 3 through 55
+    for (uint16_t j = 64; j < (61 + k) ; j++) {   // (Starting Neopixel to turn on; Where to stop ; Step )
+      strip.setPixelColor(j, 0, 0, 255, 0); // LED's 3 through 55
     }
-
     strip.show();
   }
+}
 
-  // now update the progress
 
+
+void timeOutShutDown() {
+  currentMillis = millis();
+  if (currentMillis - previousMillis >= elapsedTimeDelay) {
+    colorWipe(strip.Color(0, 0, 0, 0), strip.Color(0, 0, 0, 0));  // Set all neopixels to off
+    homed = false;    //force homing next time the testSensor() is called since the stepper is off
+    digitalWrite(disableStepperDriverPin, HIGH);     // LOW enables the stepper, HIGH disables the stepper
+  }
+}
+
+void writeToSD() {
+  //maybe make a function to write to SD for both the verbose file and the pass/fail
+  //https://www.arduino.cc/en/Reference/SD
+  // you can make folders
 
 }
