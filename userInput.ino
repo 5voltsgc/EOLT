@@ -4,7 +4,7 @@ void userInput() {
   debouncerButtonDown.update();
   debouncerButtonLeft.update();
   debouncerButtonRight.update();
-  debouncerButtonStart.update();  
+  debouncerButtonStart.update();
   buttonStateUp = debouncerButtonUp.rose();
   buttonStateDown = debouncerButtonDown.rose();
   buttonStateLeft = debouncerButtonLeft.rose();
@@ -13,7 +13,7 @@ void userInput() {
 
 
   if (buttonStateStart == HIGH) {
-    Serial.println("Green button has been pressed");
+    //    Serial.println("Green button has been pressed");
   }
   // ====================Start Button====================
   if (buttonStateStart == HIGH  && readyToTest == true ) {
@@ -97,6 +97,7 @@ void userInput() {
     editingRow = 2;
     lcdChanged = true; //this is varible is set to true anytime a varible is changed
 
+
     if (UUTserialNumber.length() > maxSerialNumberLength - 1 ) {
       UUTserialNumber = char(key);
 
@@ -104,6 +105,10 @@ void userInput() {
     else
     {
       UUTserialNumber += char(key); //use " += " to concatenate
+    }
+
+    if (UUTserialNumber == "*#") {
+      Serial.println("* was printed");
     }
   }
 

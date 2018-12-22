@@ -132,9 +132,219 @@ void timeOutShutDown() {
   }
 }
 
-void writeToSD() {
-  //maybe make a function to write to SD for both the verbose file and the pass/fail
-  //https://www.arduino.cc/en/Reference/SD
-  // you can make folders
+
+
+void selectedReadSensors() {
+  /*steps to read sensors consits of
+     1. Note: Pass fail array needs to be set up before entering this function, set the max to 0's and mins to 32,767 in uutPassFail[X][0&1]
+        this should only be done once at the beginning of the test
+     2. Loop through the heads (0 to last head)
+     2.1. Turn on digital output, switch - head 0 is D28 set HIGH, etc... for each head
+     2.2. Hall Loop (Loop through halls 0 - last hall)
+     2.2.1 loop Read ADC for each hall
+        2.2.1 write read hall value to uutVerbose[x] where x is hall number
+        2.2.2 read uutPassFail[x][0] and compare to current read value if larger write
+        2.2.3 read uutPassFail[x][1] and compare to current read value if smaller write
+     3. Return to testing loop
+
+  */
+
+
+  int16_t hallReading;
+
+  //  Serial.print("part number testing is a Seleceted type ");
+  for (int i = 0; i < column9numberHeads; i++) {
+    switch (i) {// in each case only one head is read as indicated by the HIGH in each case
+      case 0: //head 0
+        digitalWrite(headSelect0, HIGH);
+        digitalWrite(headSelect1, LOW);
+        digitalWrite(headSelect2, LOW);
+        digitalWrite(headSelect3, LOW);
+
+        break;
+
+      case 1://head 1
+        digitalWrite(headSelect0, LOW);
+        digitalWrite(headSelect1, HIGH);
+        digitalWrite(headSelect2, LOW);
+        digitalWrite(headSelect3, LOW);
+
+        break;
+
+      case 2: //head 2
+        digitalWrite(headSelect0, LOW);
+        digitalWrite(headSelect1, LOW);
+        digitalWrite(headSelect2, HIGH);
+        digitalWrite(headSelect3, LOW);
+
+
+        break;
+      case 3: //head 3
+        digitalWrite(headSelect0, LOW);
+        digitalWrite(headSelect1, LOW);
+        digitalWrite(headSelect2, LOW);
+        digitalWrite(headSelect3, HIGH);
+
+
+        break;
+    }
+    for (int j = 0; j < column8numberHallsPerHead; j++) { // now that the head is selected read each of its HALLS
+      hallReading = ads.readADC_SingleEnded(j);
+
+      uutVerbose[i * column8numberHallsPerHead + j] = hallReading; //write the Hall value into the verbose array
+
+
+
+      //=================compare max in pass / fail array=================================
+      if (uutPassFail[i * column8numberHallsPerHead + j][0] < hallReading) {
+        uutPassFail[i * column8numberHallsPerHead + j][0] = hallReading;
+      }
+      //=================compare min in pass / fail array=================================
+      if (uutPassFail[i * column8numberHallsPerHead + j][1] > hallReading) {
+        uutPassFail[i * column8numberHallsPerHead + j][1] = hallReading;
+      }
+
+        uutPassFail[i * column8numberHallsPerHead + j][4] = i;  //write the head number to the uutPassFail array once if different
+
+
+
+    }
+  }
+}
+
+
+void addressedReadSensor() {
+  /*steps to read sensors consits of
+     1. Note: Pass fail array needs to be set up before entering this function, set the max to 0's and mins to 32,767 in uutPassFail[X][0&1]
+        this should only be done once at the beginning of the test
+     2. Loop through the HEADS (0 to last head)
+     3. Loop through HALLS  (0 to last)
+        3.1 Switch on HEAD
+            3.1.1 Case 0 through last turning on/off digital outputs
+        3.2 read ADC HALL (0 to last)
+        3.3 write read hall value to uutVerbose[x] where x is hall number
+        3.4 read uutPassFail[x][0] and compare to current read value if larger swap
+        3.5 read uutPassFail[x][1] and compare to current read value if smaller swap
+
+     4. Return to testing loop
+
+  */
+  //long uutVerbose[18];
+  //long uutPassFail[18][3];
+
+  //  Serial.print("part number testing is a addressed type ");
+  int16_t hallReading;
+
+  for (int i = 0; i < column9numberHeads; i++) {
+    //Head Loop
+    for (int j = 0; j < column8numberHallsPerHead; j++) {
+      //Hall Loop
+      int addressedhall = i * column8numberHallsPerHead + j;
+      switch (j) {//halls
+        case 0:
+          digitalWrite(headSelect0, LOW);
+          digitalWrite(headSelect1, LOW);
+          digitalWrite(headSelect2, LOW);
+          digitalWrite(headSelect3, LOW);
+          break;
+        case 1:
+          digitalWrite(headSelect0, HIGH);
+          digitalWrite(headSelect1, LOW);
+          digitalWrite(headSelect2, LOW);
+          digitalWrite(headSelect3, LOW);
+          break;
+        case 2:
+          digitalWrite(headSelect0, LOW);
+          digitalWrite(headSelect1, HIGH);
+          digitalWrite(headSelect2, LOW);
+          digitalWrite(headSelect3, LOW);
+          break;
+        case 3:
+          digitalWrite(headSelect0, HIGH);
+          digitalWrite(headSelect1, HIGH);
+          digitalWrite(headSelect2, LOW);
+          digitalWrite(headSelect3, LOW);
+          break;
+        case 4:
+          digitalWrite(headSelect0, LOW);
+          digitalWrite(headSelect1, LOW);
+          digitalWrite(headSelect2, HIGH);
+          digitalWrite(headSelect3, LOW);
+          break;
+        case 5:
+          digitalWrite(headSelect0, HIGH);
+          digitalWrite(headSelect1, LOW);
+          digitalWrite(headSelect2, HIGH);
+          digitalWrite(headSelect3, LOW);
+          break;
+      }
+
+      hallReading = ads.readADC_SingleEnded(i); //use the Head loop i to count 0 - last head
+
+      //-------------------------------Code to verify proper function remove when done---------------
+      //      hallReading = random(1000);
+      //      uutVerbose[addressedhall] = hallReading; //write the Hall value into the bverbose array
+      //      Serial.print("Hall number = ");
+      //      Serial.print(i);
+      //      Serial.print("  -  Reading = ");
+      //      Serial.print(hallReading);
+      //      Serial.print("  =these should be equal= ");
+      //      Serial.println(uutVerbose[addressedhall]);
+
+
+      //      hallReading = random(1000);
+      //-------------------------------Code to verify proper function remove when done---------------
+      uutVerbose[addressedhall] = hallReading; //write the Hall value into the verbose array
+
+
+      //=================compare max in pass / fail array=================================
+      if (uutPassFail[addressedhall][0] < hallReading) {
+        uutPassFail[addressedhall][0] = hallReading;
+      }
+      //=================compare min in pass / fail array=================================
+      if (uutPassFail[addressedhall][1] > hallReading) {
+        uutPassFail[addressedhall][1] = hallReading;
+      }
+
+      uutPassFail[addressedhall][4] = i;//write the head number to the uutPassFail
+
+
+
+
+      //================Add the head number and Hall number
+    }
+  }
+}
+
+
+void initializeUUTPassFail() {//row 0 is MAX, 1 is MIN, 2 is Diff, 3 PASS, 4 Head number, 5 hall Number.
+  for (int i = 0; i < MAXHALLS; i++) {
+    uutPassFail[i][0] = 0; //initalize the MAX values for each hall to 0 zero
+    uutPassFail[i][1] = 32766; //initalize the MIN values for each hall to interger max value 2^12=32,767
+    uutPassFail[i][2] = 0; // Set the Differenace to 0
+    uutPassFail[i][3] = 0; // PASS, 0 equals a fail, and a 1 is a pass
+    uutPassFail[i][4] = 0; // HEAD Number
+    uutPassFail[i][5] = 0; // HALL
+  }
+}
+
+void openSDCard() {
+  lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
+  lcd.print("Initializing SD card");
+  //  Serial.print("Initializing SD card...");
+
+  if (!SD.begin(10)) {
+    lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
+    lcd.print("initialization failed");
+    //    Serial.println("initialization failed!");
+    delay(1000);
+    lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
+    lcd.print("Check SD Card       ");
+    while (1); //Exit out of testing to give the operator a chance to fix SD card
+  }
+  lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
+  lcd.print("SD initializated    ");
+//  Serial.println("initialization done.");
+
 
 }
