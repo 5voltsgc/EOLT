@@ -1,7 +1,36 @@
 void testSensors() {  //this is called at the userInput start button
-
-
   timedOut = false;
+
+  //================================== Open SD card, exit out of testing function if not found  =============================
+  lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
+  lcd.print("Initializing SD card");
+  //  Serial.print("Initializing SD card...");
+
+  if (!SD.begin(10)) {
+    lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
+    lcd.print("initialization failed");
+    //    Serial.println("initialization failed!");
+    delay(1000);
+    lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
+    lcd.print("Check SD Card       ");
+
+    for (int d = 0; d < 10 ; d++) { // this is a blocking function with flashing light to check the SD and safety exit function
+      colorWipe(strip.Color(0, 0, 0, 0), strip.Color(255, 128, 0, 0));
+      delay(250);
+      colorWipe(strip.Color(0, 0, 0, 0), strip.Color(191, 255, 0, 0));
+      delay(250);
+      colorWipe(strip.Color(0, 0, 0, 0), strip.Color(0, 64, 255, 0));
+      delay(250);
+      colorWipe(strip.Color(0, 0, 0, 0), strip.Color(255, 0, 191, 0));
+      delay(250);
+    }
+    colorWipe(strip.Color(0, 0, 0, 0), strip.Color(0, 0, 0, 0));
+    return; //Exit out of testing to give the operator a chance to fix SD card and start test over
+  }
+  lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
+  lcd.print("SD initializated    ");
+
+
 
 
   //================================== unit under test varibles =============================
@@ -46,14 +75,14 @@ void testSensors() {  //this is called at the userInput start button
     12/01/2018,8:08, 121248, B12345   ,    1250   , 25      , 1225    , 0       ,3           ,4       , 0         , 2          , JEFF   , 10,
     12/01/2018,8:08, 121248, B12345   ,    1250   , 25      , 1225    , 0       ,3           ,4       , 1         , 0          , JEFF   , 10,
 
-    (These) values will be collected at during the run, all others are static during this test cycle and repeated in the file
+    (These) values will be collected during the run, all others are static in test cycle and repeated in the file
 
     For Verbose file or partnumber\Serial#.csv
     Column-0, Column 1 -> (Heads * Halls)
     Step-X, 179, 180, ...
 
      At the end of the test, or all the steps are complete
-     Add:
+
      Date:
      Time:
      Part Number:
@@ -66,11 +95,11 @@ void testSensors() {  //this is called at the userInput start button
   */
 
   todaysDate = String(now.year()) + '/' + String(now.month()) + '/' + String(now.day());
-  timeNow = String(now.hour()) + ':' + String(now.minute());
+  timeNow = String(now.hour()) + ':' + String(now.minute()) + ':' + String(now.second());
   String column0Date = todaysDate;
-  String column1Time = timeNow; //change code for when RTC is installed
+  String column1Time = timeNow; //change code for when RTC is initialized
   String column2PartNumber = String((partNumber[selectedPart][0]));
-  String column3SerialNumber = UUTserialNumber;
+  String column3SerialNumber = serialNumArray;
   column8numberHallsPerHead = partNumber[selectedPart][2];
   column9numberHeads = partNumber[selectedPart][3];
   String column12User = selectedUser;
@@ -78,17 +107,21 @@ void testSensors() {  //this is called at the userInput start button
   int16_t diffMaxLimit = partNumber[selectedPart][12];
   int16_t diffMinLimit = partNumber[selectedPart][13];
 
+  txtSerialNumber = ""; //write the serial number to this string instead of array
+  for (int i = 0; i < 6; i++) {
+    txtSerialNumber = txtSerialNumber + serialNumArray[i];
+  }
 
 
-  //================================== Open SD card, Create/Append File in folder =============================
 
-  openSDCard();
 
   //================================== Open the SD card for partnumber\Serial#.csv or Verbose=============================
   if (!SD.exists(column2PartNumber)) {
     SD.mkdir(column2PartNumber);
   }
-  String partNumberAndFolder = (column2PartNumber) + "/" + UUTserialNumber + ".csv";
+
+
+  String partNumberAndFolder = (column2PartNumber) + "/" + txtSerialNumber + ".csv";
   myFile = SD.open(partNumberAndFolder , FILE_WRITE);
   lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
   lcd.print("                    ");
@@ -108,9 +141,7 @@ void testSensors() {  //this is called at the userInput start button
       case 1:
         selectedReadSensors();
         break;
-
     }
-
 
     myFile.print("Step - ");
     myFile.print(i);
@@ -129,7 +160,7 @@ void testSensors() {  //this is called at the userInput start button
   myFile.print("Part Number: ,");
   myFile.println(column2PartNumber);
   myFile.print("Serial Number: ,");
-  myFile.println(UUTserialNumber);
+  myFile.println(txtSerialNumber);
   myFile.print("Number Heads: ,");
   myFile.println(column9numberHeads);
   myFile.print("Number Halls/Heads: ,");
@@ -143,14 +174,12 @@ void testSensors() {  //this is called at the userInput start button
   myFile.print("The Set Current Difference Min Value: ,");
   myFile.println(diffMinLimit);
 
-
-
-
   long elapsedTimeMS = millis() - currentMillis;
   myFile.print("Test took (ms): ,");
   myFile.println(elapsedTimeMS);
   myFile.close();
 
+  // turn off digital wirte to heads
   digitalWrite(headSelect0, LOW);
   digitalWrite(headSelect1, LOW);
   digitalWrite(headSelect2, LOW);
@@ -175,7 +204,6 @@ void testSensors() {  //this is called at the userInput start button
       uutPassFail[k][3] = 0; //Fail
     }
 
-
     //============This equation doesn't give the right head number based on the step=================================
     //right now it returns (k % column8numberHallsPerHead) => 0,1,2,0,1,2,0... it should => 0,0,0,1,1,1,2,2,2,3,3,3  based halls per head
 
@@ -188,8 +216,6 @@ void testSensors() {  //this is called at the userInput start button
   }
 
   //=====================================Open and write to RawData.csv =============================
-
-  openSDCard();
 
   if (SD.exists("RawData.csv")) {
     myFile = SD.open("RawData.csv" , FILE_WRITE);
@@ -210,10 +236,12 @@ void testSensors() {  //this is called at the userInput start button
     lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
     lcd.print("can't open RawData  ");
     delay(1000);
-    while (1);
+    lcd.print("No data written!    ");
+    delay(1000);
+    return;
   }
 
-  
+
   //
   for (int k = 0; k < column9numberHeads * column8numberHallsPerHead; k++) {
 
@@ -223,7 +251,7 @@ void testSensors() {  //this is called at the userInput start button
     myFile.print(",");
     myFile.print(column2PartNumber); //2-Part#
     myFile.print(",");
-    myFile.print(UUTserialNumber); //3-Serial#
+    myFile.print(txtSerialNumber); //3-Serial#
     myFile.print(",");
     myFile.print(uutPassFail[k][0]); // 4-Max
     myFile.print(",");
@@ -268,14 +296,33 @@ void testSensors() {  //this is called at the userInput start button
     lcd.print("                    ");
     lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
     lcd.print("Passed");
-  } else {
+  } else {//Failed
+
     colorWipe(strip.Color(0, 0, 0, 0), strip.Color(255, 0, 0, 0));  // Set all neopixels to off.  The 1st is for the 4 end strips, and the 2nd the top neopixels
     lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
     lcd.print("                    ");
     lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
-    lcd.print("Failed");
-
+    String failedMessage = "Sensor Failed, press and hold up button to continue.  Things to check, cable, correct part number";
+    String toShow;
+    int ii = 0;
+    int strLength = failedMessage.length();
+    digitalWrite(disableStepperDriverPin, HIGH); //High disable the stepper
+    lcd.noBlink();
+    while (buttonStateUp == LOW) {
+      debouncerButtonUp.update();
+      buttonStateUp = debouncerButtonUp.rose();
+      toShow = failedMessage.substring(ii, ii + 20);
+      lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
+      lcd.print(toShow);
+      ii = ii + 2;
+      // We have to reset ii after there is less text displayed.
+      if (ii > (strLength - 20)) {
+        ii = 0;
+      }
+      delay(250);
+    }
   }
-bailout: //exit point if the SD card fails  delay(10000);
+
   lcdChanged = true;
+  lcd.blink();
 }

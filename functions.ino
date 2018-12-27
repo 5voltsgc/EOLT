@@ -1,96 +1,35 @@
 
-void updateLCD() {
-  if (lcdChanged == true) {
-    lcd.setCursor(0, 0);//Column, Row (Starts counting at 0)
-
-    if (userChanged) {
-      lcd.print("USER:              ");
-      lcd.setCursor(6, 0);//Column, Row (Starts counting at 0)
-      selectedUser = listUsers[operatorCounter];
-      lcd.print(selectedUser);
-      userChanged = false;
-
-    }
-    lcd.setCursor(0, 1);//Column, Row (Starts counting at 0)
-    lcd.print("PART#: ");
-    lcd.print(partNumber[selectedPart][0]);
-    lcd.setCursor(0, 2);//Column, Row (Starts counting at 0)
-    lcd.print("SERIAL#: ");
-    lcd.print(UUTserialNumber);
-    lcd.print("     ");
-
-    lcdChanged = false;
-
-    switch (editingRow) {
-      case 0: //editing the 0 row on LCD or the user name
-        lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
-        lcd.print("LEFT/RIGHT FOR USER");
-        lcd.setCursor(6, 0);//Column, Row (Starts counting at 0)
-
-        break;
-
-      case 1: //editing the 1 row on LCD or the part number
-        lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
-        lcd.print("LEFT/RIGHT FOR PART#");
-        lcd.setCursor(7, 1);//Column, Row (Starts counting at 0)
-
-        break;
-
-      case 2://editing the 2 row on LCD or the serial number
-        lcd.setCursor(0, 3);
-        lcd.print("KEYPAD FOR SERIAL#  ");
-        lcd.setCursor(9 + UUTserialNumber.length(), 2);
-        readyToTest = false;
-
-        if (UUTserialNumber.length() == maxSerialNumberLength) {
-          lcd.setCursor(0, 3);
-          lcd.print("GREEN BTN TO START");
-          readyToTest = true;  //use this to verify 6 digits are placed in the serial number spot
-        }
-        break;
-    }
-  }
-}
-
-
-
 
 void homeStepper() {
   digitalWrite(disableStepperDriverPin, LOW);  // LOW enables the stepper, HIGH disables the stepper
-  if (homed == false) {
+  stepperX.setMaxSpeed(100.0);      //Set max speed of stepper
+  stepperX.setAcceleration(100.0);  // Set acceleration of stepper
+  stepperX.setCurrentPosition(0);    // Set the current postion as home position
+  initial_homing = -1; //this changes based on if going backwards or forwards
 
-
-    stepperX.setMaxSpeed(2000.0);      //Set max speed of stepper
-    stepperX.setAcceleration(5000.0);  // Set acceleration of stepper
-    stepperX.setCurrentPosition(0);    // Set the current postion as home position
-    initial_homing = -1; //this changes based on if going backwards or forwards
-
-    while ( digitalRead(homeSwitchNO) == false) {
-      stepperX.moveTo(initial_homing);
-      initial_homing = initial_homing - 1; //moving more in each loop
-      stepperX.run();   //Go to stepperX.moveTo position
-    }
-
-    stepperX.setCurrentPosition(0);    // reset the home position with it's current postion - this also requires a setmaxSpeed and setAcceleration
-    stepperX.setMaxSpeed(1000.0);      //Set max speed of stepper (Slower to get better accuracy) 100 is a good starting number
-    stepperX.setAcceleration(5000.0);  // Set acceleration of stepper
-    initial_homing = 1;  //this changes based on if going backwards or forwards
-
-    while ( digitalRead(homeSwitchNO) == true) {
-      stepperX.moveTo(initial_homing); //go home as defined in setup, it can be close to the microswitch of the plate in the middle
-      initial_homing++; //Decrement the go to postion by -1
-      stepperX.run();   //Go to set postion
-      delay(1);         //A delay time enough to read the microswitch
-    }
-    stepperX.setCurrentPosition(0);    // reset the home position with it's current postion it is now homed - this also requires a setmaxSpeed and setAcceleration
-    homed = true;
+  while ( digitalRead(homeSwitchNO) == false) {
+    stepperX.moveTo(initial_homing);
+    initial_homing = initial_homing - 1; //moving more in each loop
+    stepperX.run();   //Go to stepperX.moveTo position
   }
+
+  stepperX.setCurrentPosition(0);    // reset the home position with it's current postion - this also requires a setmaxSpeed and setAcceleration
+  stepperX.setMaxSpeed(1000.0);      //Set max speed of stepper (Slower to get better accuracy) 100 is a good starting number
+  stepperX.setAcceleration(5000.0);  // Set acceleration of stepper
+  initial_homing = 1;  //this changes based on if going backwards or forwards
+
+  while ( digitalRead(homeSwitchNO) == true) {
+    stepperX.moveTo(initial_homing); //go home as defined in setup, it can be close to the microswitch of the plate in the middle
+    initial_homing++; //Decrement the go to postion by -1
+    stepperX.run();   //Go to set postion
+    delay(1);         //A delay time enough to read the microswitch
+  }
+  stepperX.setCurrentPosition(0);    // reset the home position with it's current postion it is now homed - this also requires a setmaxSpeed and setAcceleration
+  homed = true;
 }
 
 
-
-void colorWipe(uint32_t color1, uint32_t color2) {
-
+void colorWipe(uint32_t color1, uint32_t color2) {//1st color is for the ends, the second is for the top row
   for (uint16_t i = 0; i < 5; i++) {
     strip.setPixelColor(i, color1);  //LED's 1, 2, 3, 4
     strip.setPixelColor(i + 56, color1); //LED's 57, 58, 59, 60
@@ -106,7 +45,6 @@ void colorWipe(uint32_t color1, uint32_t color2) {
   strip.show();
 }
 
-
 void colorProgess(float percentageComplete) { // send an integer between 0 and 100
   if (percentageComplete > 0 &&  percentageComplete < 1) { // error checking to verify the percent complete is between 0 and 100
 
@@ -120,19 +58,6 @@ void colorProgess(float percentageComplete) { // send an integer between 0 and 1
     strip.show();
   }
 }
-
-
-
-void timeOutShutDown() {
-  currentMillis = millis();
-  if (currentMillis - previousMillis >= elapsedTimeDelay) {
-    colorWipe(strip.Color(0, 0, 0, 0), strip.Color(0, 0, 0, 0));  // Set all neopixels to off
-    homed = false;    //force homing next time the testSensor() is called since the stepper is off
-    digitalWrite(disableStepperDriverPin, HIGH);     // LOW enables the stepper, HIGH disables the stepper
-  }
-}
-
-
 
 void selectedReadSensors() {
   /*steps to read sensors consits of
@@ -149,9 +74,7 @@ void selectedReadSensors() {
 
   */
 
-
   int16_t hallReading;
-
   //  Serial.print("part number testing is a Seleceted type ");
   for (int i = 0; i < column9numberHeads; i++) {
     switch (i) {// in each case only one head is read as indicated by the HIGH in each case
@@ -193,8 +116,6 @@ void selectedReadSensors() {
 
       uutVerbose[i * column8numberHallsPerHead + j] = hallReading; //write the Hall value into the verbose array
 
-
-
       //=================compare max in pass / fail array=================================
       if (uutPassFail[i * column8numberHallsPerHead + j][0] < hallReading) {
         uutPassFail[i * column8numberHallsPerHead + j][0] = hallReading;
@@ -203,11 +124,7 @@ void selectedReadSensors() {
       if (uutPassFail[i * column8numberHallsPerHead + j][1] > hallReading) {
         uutPassFail[i * column8numberHallsPerHead + j][1] = hallReading;
       }
-
-        uutPassFail[i * column8numberHallsPerHead + j][4] = i;  //write the head number to the uutPassFail array once if different
-
-
-
+      uutPassFail[i * column8numberHallsPerHead + j][4] = i;  //write the head number to the uutPassFail array once if different
     }
   }
 }
@@ -305,13 +222,7 @@ void addressedReadSensor() {
       if (uutPassFail[addressedhall][1] > hallReading) {
         uutPassFail[addressedhall][1] = hallReading;
       }
-
       uutPassFail[addressedhall][4] = i;//write the head number to the uutPassFail
-
-
-
-
-      //================Add the head number and Hall number
     }
   }
 }
@@ -326,25 +237,4 @@ void initializeUUTPassFail() {//row 0 is MAX, 1 is MIN, 2 is Diff, 3 PASS, 4 Hea
     uutPassFail[i][4] = 0; // HEAD Number
     uutPassFail[i][5] = 0; // HALL
   }
-}
-
-void openSDCard() {
-  lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
-  lcd.print("Initializing SD card");
-  //  Serial.print("Initializing SD card...");
-
-  if (!SD.begin(10)) {
-    lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
-    lcd.print("initialization failed");
-    //    Serial.println("initialization failed!");
-    delay(1000);
-    lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
-    lcd.print("Check SD Card       ");
-    while (1); //Exit out of testing to give the operator a chance to fix SD card
-  }
-  lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
-  lcd.print("SD initializated    ");
-//  Serial.println("initialization done.");
-
-
 }
