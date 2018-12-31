@@ -230,7 +230,6 @@ void testSensors() {  //this is called at the userInput start button
     lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
     lcd.print("RawData.csv         ");
     delay(1000);
-
   }
   else {
     lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
@@ -241,10 +240,10 @@ void testSensors() {  //this is called at the userInput start button
     return;
   }
 
+  String sensorTestReport = ""; //String to print to LCD - this will be long
+  sensorTestReport = "REPORT HEAD:HALL-DIFF ";
 
-  //
   for (int k = 0; k < column9numberHeads * column8numberHallsPerHead; k++) {
-
     myFile.print(todaysDate); //0-Date
     myFile.print(",");
     myFile.print(timeNow); //1-Time
@@ -262,9 +261,11 @@ void testSensors() {  //this is called at the userInput start button
 
     if (uutPassFail[k][3] == 1) {
       myFile.print("Pass,");  // 7-Pass/Fail
+      sensorTestReport = sensorTestReport + (uutPassFail[k][4]) + ":" + (uutPassFail[k][5]) + "-" + (uutPassFail[k][2]) + " PASS,    ";
     } else {
       myFile.print("Fail,");
       uutPassed = false;  //at the beginning of this test, uutPassed was set to true, if any value fails it gets set to false
+      sensorTestReport = sensorTestReport + (uutPassFail[k][4]) + ":" + (uutPassFail[k][5]) + "-" + (uutPassFail[k][2]) + " FAIL,    ";
     }
     myFile.print(column8numberHallsPerHead); // 8-Halls / head
     myFile.print(",");
@@ -282,47 +283,24 @@ void testSensors() {  //this is called at the userInput start button
     myFile.print(",");
     myFile.print(readIdentifier); //13-EEPROM Id
     myFile.println(",");
-
-
   }
 
   //==============================Close RawData.csv=================================
   myFile.close();
-
+  digitalWrite(disableStepperDriverPin, HIGH); //High disable the stepper
 
   if (uutPassed == true) {
     colorWipe(strip.Color(0, 0, 0, 0), strip.Color(0, 225, 0, 0));  // Set all neopixels to off.  The 1st is for the 4 end strips, and the 2nd the top neopixels
-    lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
-    lcd.print("                    ");
-    lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
-    lcd.print("Passed");
   } else {//Failed
-
-    colorWipe(strip.Color(0, 0, 0, 0), strip.Color(255, 0, 0, 0));  // Set all neopixels to off.  The 1st is for the 4 end strips, and the 2nd the top neopixels
-    lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
-    lcd.print("                    ");
-    lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
-    String failedMessage = "Sensor Failed, press and hold up button to continue.  Things to check, cable, correct part number";
-    String toShow;
-    int ii = 0;
-    int strLength = failedMessage.length();
-    digitalWrite(disableStepperDriverPin, HIGH); //High disable the stepper
-    lcd.noBlink();
-    while (buttonStateUp == LOW) {
-      debouncerButtonUp.update();
-      buttonStateUp = debouncerButtonUp.rose();
-      toShow = failedMessage.substring(ii, ii + 20);
-      lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
-      lcd.print(toShow);
-      ii = ii + 2;
-      // We have to reset ii after there is less text displayed.
-      if (ii > (strLength - 20)) {
-        ii = 0;
-      }
-      delay(250);
-    }
+    colorWipe(strip.Color(0, 0, 0, 0), strip.Color(255, 0, 0, 0));  // Set all neopixels to RED.  The 1st is for the 4 end strips, and the 2nd the top neopixels
   }
 
+  lcd.setCursor(0, 0);
+  lcd.print("LEFT:REV. DOWN=PAUSE");
+
+  scrollLongMessageLCD(sensorTestReport);  //Send the long test report to be printed on LCD
+  colorWipe(strip.Color(0, 0, 0, 0), strip.Color(0, 0, 0, 0)); //Turn off the neopixles after the test
   lcdChanged = true;
-  lcd.blink();
+  userChanged = true;
+
 }

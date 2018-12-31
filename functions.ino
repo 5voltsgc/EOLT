@@ -197,20 +197,6 @@ void addressedReadSensor() {
       }
 
       hallReading = ads.readADC_SingleEnded(i); //use the Head loop i to count 0 - last head
-
-      //-------------------------------Code to verify proper function remove when done---------------
-      //      hallReading = random(1000);
-      //      uutVerbose[addressedhall] = hallReading; //write the Hall value into the bverbose array
-      //      Serial.print("Hall number = ");
-      //      Serial.print(i);
-      //      Serial.print("  -  Reading = ");
-      //      Serial.print(hallReading);
-      //      Serial.print("  =these should be equal= ");
-      //      Serial.println(uutVerbose[addressedhall]);
-
-
-      //      hallReading = random(1000);
-      //-------------------------------Code to verify proper function remove when done---------------
       uutVerbose[addressedhall] = hallReading; //write the Hall value into the verbose array
 
 
@@ -237,4 +223,52 @@ void initializeUUTPassFail() {//row 0 is MAX, 1 is MIN, 2 is Diff, 3 PASS, 4 Hea
     uutPassFail[i][4] = 0; // HEAD Number
     uutPassFail[i][5] = 0; // HALL
   }
+}
+
+void scrollLongMessageLCD(String longMessage) {
+  //This is a blocking function that scrolls a long message on the LCD until the user presses the UP button
+  int index = 0;
+  /*These varibles are used to change how the message scrolls and thereby the readability
+    indexStepSize is for how many columns it moves with each loop usually its is between 1 and 6
+    (too small and it seems to drag, too big the message might skip across the LCD without beening seen) there are only 20 columns
+    readDelay is how long the message stops for the user to read, and is in milliseonds.
+    found 250 or 1/4 second was too fast and jumpy,  hard to read, where 800 seems to be too slow
+  */
+  byte indexStepSize = 3; // how many columns the message skips each time through the loop, 1 = one column, where 3 = 3 columns
+  int readDelay = 400;
+
+  longMessage = longMessage + " - PRESS UP AND HOLD, TO CONTINUE - "; // Append to the long message, how to exit
+  int strLength = longMessage.length();
+  String toShow = "";  // string to hold the parsed message
+  lcd.noBlink();
+
+
+  while (buttonStateUp == LOW) {
+    buttonStateUpdate();// Need to update buttons so that the exit while loop check can happen
+    toShow = longMessage.substring(index, index + 20); // This parses the long message starting at index plus 20 characters
+    lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)// The LCD can print 20 char accross one row, we are using the bottom or 3rd row
+    lcd.print(toShow);
+    delay(readDelay / 2);
+    buttonStateLeft = digitalRead(buttonLeft);  // not using debounce, since a hold is required
+    buttonStateDown = digitalRead(buttonDown);  // not using debounce, since a hold is required on the button and the debounce doesn't have that
+    while (buttonStateDown == HIGH) {
+      //Hold here, or a pause the scrolling of the message
+      buttonStateDown = digitalRead(buttonDown);
+    }
+    if (buttonStateLeft == HIGH) {// this reverese the travel of the scrolling lcd message
+      if (index < 7) {
+        index = (strLength - 23);
+      } else {
+        index = index - indexStepSize * 2; // need to subtract
+      }
+    }
+    index = index + indexStepSize;  //step by X columns  each loop
+    // We have to reset ii after there is less text displayed.
+    if (index > (strLength - 20)) {
+      index = 0;
+    }
+    delay(readDelay / 2); // This is how long to display the message before scrolling, too short and it becomes unreadable, too long, it becomes long to watch
+
+  }
+  lcd.blink();
 }
