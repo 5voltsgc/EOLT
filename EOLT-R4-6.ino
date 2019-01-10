@@ -116,11 +116,13 @@ boolean buttonStateRight;
 boolean buttonStateStart;
 
 //====================Users=======================
-const int countOperators = 24;
-char listUsers[24][11] = {
+const int countOperators = 29;
+char listUsers[countOperators][11] = {
   "Anita",
   "Bruce",
+  "Cayetano",
   "Cheryl",
+  "Daniel",
   "Debbie",
   "Deborah",
   "Edward",
@@ -128,6 +130,8 @@ char listUsers[24][11] = {
   "Jeff W.",
   "Joby",
   "John",
+  "Micheal B.",
+  "Micheal L.",
   "Operator 1",
   "Operator 2",
   "Operator 3",
@@ -137,6 +141,7 @@ char listUsers[24][11] = {
   "Operator 7",
   "Operator 8",
   "Operator 9",
+  "Ponnarith",
   "Sheldon",
   "Sop",
   "Stephen",
@@ -162,16 +167,16 @@ const byte PN_COLS = 15; //four columns
 //Make the array in excel and export as a csv file with these headers
 //0-Part Numbers,1-Count Halls,2-halls/head,3-# heads,4-Selected,5-addressed,6-address lines,7-# analog lines,8-highMax,9-highMin,10-lowMax,11-lowMin,12-diffMax,13-diffLow
 long partNumber[PN_ROWS][PN_COLS] = {
-  {107287, 8, 2, 4, 1, 0, 4, 2, 1000, 700, -600, -900, 1000, -50},
+  {107287, 8, 2, 4, 1, 0, 4, 2, 1000, 700, -600, -900, 818, 560}, //Note: that this doesn't test the DEF hall sensor, in column2 it is set to 1 hall,  But now I'm looking at reading both def and IDOD so change it back to 2
   {107297, 8, 2, 4, 1, 0, 4, 2, 1000, 700, -600, -900, 818, 560},
-  {108144, 8, 2, 4, 1, 0, 4, 2, 1000, 700, -600, -900, 1000, -50},
+  {108144, 8, 2, 4, 1, 0, 4, 2, 1000, 700, -600, -900, 818, 560},
   {108150, 8, 2, 4, 1, 0, 4, 2, 1000, 700, -600, -900, 885, 654},
-  {112497, 6, 2, 3, 1, 0, 3, 2, 1000, 700, -600, -900, 1000, -50},
-  {121248, 12, 3, 4, 1, 0, 4, 3, 1000, 700, -600, -900, 728, 420}, // using bad unit for testing so change back to 728,460
+  {112497, 6, 2, 3, 1, 0, 3, 2, 1000, 700, -600, -900, 818, 560},//Note: that this doesn't test the DEF hall sensor, in column2 it is set to 1 hall
+  {121248, 12, 3, 4, 1, 0, 4, 3, 1000, 700, -600, -900, 728, 460},
   {121250, 18, 6, 3, 0, 1, 3, 3, 1000, 700, -600, -900, 609, 423},
-  {121334, 15, 5, 3, 0, 1, 3, 3, 1000, 700, -600, -900, 1000, -50},
-  {121335, 15, 5, 3, 0, 1, 3, 3, 1000, 700, -600, -900, 1000, -50},
-  {121791, 12, 6, 2, 0, 1, 3, 2, 1000, 700, -600, -900, 1000, -50}
+  {121334, 15, 5, 3, 0, 1, 3, 3, 1000, 700, -600, -900, 728, 460},
+  {121335, 15, 5, 3, 0, 1, 3, 3, 1000, 700, -600, -900, 728, 460},
+  {121791, 12, 6, 2, 0, 1, 3, 2, 1000, 700, -600, -900, 728, 460},
 };
 
 
@@ -394,8 +399,8 @@ void downButton() {
     lcdChanged = true; //this is varible is set to true anytime a user interacts with the user interface
 
     if (editingRow >= 3) {
-        lcd.setCursor(0, 3);
-        lcd.print("STREAMING TO SERIAL ");
+      lcd.setCursor(0, 3);
+      lcd.print("STREAMING TO SERIAL ");
       //====================Streaming Mode done here===============================
       column8numberHallsPerHead = partNumber[selectedPart][2];
       column9numberHeads = partNumber[selectedPart][3];
@@ -551,7 +556,7 @@ void updateLCD() {
       userChanged = false;
     }
     lcd.setCursor(0, 1);//Column, Row (Starts counting at 0)
-    lcd.print("PART#: ");
+    lcd.print("ITEM#: ");
     lcd.print(partNumber[selectedPart][0]);
 
     lcd.setCursor(0, 2);//Column, Row (Starts counting at 0)
@@ -584,7 +589,7 @@ void updateLCD() {
       case 3:// streaming mode
         lcd.setCursor(0, 3);
         lcd.print("TO STREAM-PRESS DOWN");
-        
+
         break;
 
     }

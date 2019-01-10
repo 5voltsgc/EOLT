@@ -112,6 +112,7 @@ void selectedReadSensors() {
         break;
     }
     for (int j = 0; j < column8numberHallsPerHead; j++) { // now that the head is selected read each of its HALLS
+      
       hallReading = ads.readADC_SingleEnded(j);
 
       uutVerbose[i * column8numberHallsPerHead + j] = hallReading; //write the Hall value into the verbose array
