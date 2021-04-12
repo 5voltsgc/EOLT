@@ -46,6 +46,12 @@
 int readIdentifier;//this is the testers unique identifier
 int uniqueIdentifier;  //Variable to store in EEPROM.  The testers will have a unique identifier starting with 10 at location 1, and grow sequencially by 1.
 int eeAddress = 1;
+int address1Location = 2;
+int address2Location = 3;
+byte address1result = 0;
+byte address2result = 0;
+float uniqueTestID = 10.00;// place holder
+
 
 // ====================for SD Card====================
 #include <SD.h>
@@ -116,9 +122,9 @@ boolean buttonStateRight;
 boolean buttonStateStart;
 
 //====================Users=======================
-const int countOperators = 29;
+const int countOperators = 30;
 char listUsers[countOperators][11] = {
-  "Anita",
+  "Anida",
   "Bruce",
   "Cayetano",
   "Cheryl",
@@ -142,6 +148,7 @@ char listUsers[countOperators][11] = {
   "Operator 8",
   "Operator 9",
   "Ponnarith",
+  "Sarah",
   "Sheldon",
   "Sop",
   "Stephen",
@@ -161,22 +168,23 @@ int column8numberHallsPerHead;
 int selectOrAddressed;  //0 is addressed, and 1 is selected
 
 //====================PartNumbers=======================
-const byte PN_ROWS = 10; //for Rows,  change this number to match the count of rows - 10 rows equals 10 rows starting count from 1.  As in 1,2,3,4,5,6,7,8,9,10
+const byte PN_ROWS = 11; //for Rows,  change this number to match the count of rows - 10 rows equals 10 rows starting count from 1.  As in 1,2,3,4,5,6,7,8,9,10
 const byte PN_COLS = 15; //four columns
 
 //Make the array in excel and export as a csv file with these headers
 //0-Part Numbers,1-Count Halls,2-halls/head,3-# heads,4-Selected,5-addressed,6-address lines,7-# analog lines,8-highMax,9-highMin,10-lowMax,11-lowMin,12-diffMax,13-diffLow
 long partNumber[PN_ROWS][PN_COLS] = {
-  {107287, 8, 2, 4, 1, 0, 4, 2, 1000, 700, -600, -900, 818, 560}, //Note: that this doesn't test the DEF hall sensor, in column2 it is set to 1 hall,  But now I'm looking at reading both def and IDOD so change it back to 2
+  {107287, 8, 2, 4, 1, 0, 4, 2, 1000, 700, -600, -900, 818, 560},
   {107297, 8, 2, 4, 1, 0, 4, 2, 1000, 700, -600, -900, 818, 560},
   {108144, 8, 2, 4, 1, 0, 4, 2, 1000, 700, -600, -900, 818, 560},
-  {108150, 8, 2, 4, 1, 0, 4, 2, 1000, 700, -600, -900, 885, 654},
-  {112497, 6, 2, 3, 1, 0, 3, 2, 1000, 700, -600, -900, 818, 560},//Note: that this doesn't test the DEF hall sensor, in column2 it is set to 1 hall
+  {108150, 8, 2, 4, 1, 0, 4, 2, 1000, 700, -600, -900, 818, 560},
+  {108283, 18, 6, 3, 0, 1, 3, 3, 1000, 700, -600, -900, 609, 423},//added 2/19/2019
+  {112497, 6, 2, 3, 1, 0, 3, 2, 1000, 700, -600, -900, 818, 560},
   {121248, 12, 3, 4, 1, 0, 4, 3, 1000, 700, -600, -900, 728, 460},
   {121250, 18, 6, 3, 0, 1, 3, 3, 1000, 700, -600, -900, 609, 423},
   {121334, 15, 5, 3, 0, 1, 3, 3, 1000, 700, -600, -900, 728, 460},
   {121335, 15, 5, 3, 0, 1, 3, 3, 1000, 700, -600, -900, 728, 460},
-  {121791, 12, 6, 2, 0, 1, 3, 2, 1000, 700, -600, -900, 728, 460},
+  {121791, 12, 6, 2, 0, 1, 3, 2, 1000, 700, -600, -900, 562, 345},  //Updated 1/22/2019
 };
 
 
@@ -213,7 +221,7 @@ String UUTserialNumber; //
 const byte maxSerialNumberLength = 5; //Zero indexed, B12345 = 6 characters, but when starting from zero it's 5
 const String serialnumberStartsWith = "B";
 byte serialNumArrayPointer; // for pointing to each cell in the Serial Number array
-char serialNumArray[6] = "B01234\0"; //Serial Number array - should a \0 null cahracter be added to the end so I can just directly print without looping?
+char serialNumArray[7] = "B01234"; //Serial Number array - with a string array, the \0 null character is added by compiler, initialize size is +1
 String txtSerialNumber = "";
 
 //================Hall Sensor Readings Arrays=============
@@ -240,6 +248,8 @@ String todaysDate;
 String timeNow;
 DateTime now;
 
+String softwareVersion;
+String softwareDate;
 
 
 
@@ -282,11 +292,12 @@ void setup() {
   eeAddress = 1;// location for the identifier in EEPROM memory
   readIdentifier = EEPROM.read(eeAddress);
 
+
   //=====================Assign the EEPROM with unique idenitifer =================
   //This code is used to assign the unique identifier,
   //Uncomment these following 17 lines (Between the /* and */ comment symbols)
   //and change the uniqueIdentifier = 10+N;  to some number above 10 a unique one for each machine
-  //Upload to Mega,  then Comment out these lines and re-upload.
+  //Upload to Mega,  then Comment out these lines, by using the /* lines...*/  and re-upload.
 
   /*
       uniqueIdentifier = 12;  //Variable to store in EEPROM.  The testers will have a unique identifier starting with 10 at location 1, and grow sequencially by 1.
@@ -313,7 +324,7 @@ void setup() {
   lcd.clear();
 
   //=====================Real Time Clock=================
-  if (! rtc.begin()) {
+  delay(50);  if (! rtc.begin()) {
     lcd.print("Couldn't find RTC");
     lcd.setCursor(0, 1);//Column, Row (Starts counting at 0)
     lcd.print("No Date/Time will be ");
@@ -323,23 +334,24 @@ void setup() {
   }
   if (! rtc.initialized()) {
     lcd.clear();
-    lcd.print("RTC is NOT running!");
+    lcd.print("RTC is NOT running!");//to fix this error you only have to upload the curent time
+    //look in examples for RTCLIB, and choose the pcf8523 example, un-comment out the computer time and upload, then reupload the EOLT program
     lcd.setCursor(0, 1);//Column, Row (Starts counting at 0)
-    lcd.print("No Date/Time will be ");
+    lcd.print("Date/Time not rec. ");
     lcd.setCursor(0, 2);//Column, Row (Starts counting at 0)
-    lcd.print("Recorded");
+    lcd.print("please set time");
     delay(30000);
 
     // following line sets the RTC to the date & time this sketch was compiled
-    // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
     // This line sets the RTC with an explicit date & time, for example to set
     // January 21, 2014 at 3am you would call:
     // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
   }
 
   // ====================Software Version====================
-  String softwareVersion = "0.0.0.4-6"; // update this as the program changes
-  String softwareDate = "12/29/2018"; // update this as the program changes
+  softwareVersion = "1.0.0."; // update this as the program changes
+  softwareDate = "03/12/2019"; // update this as the program changes
 
   lcd.print("Software Date:");
   lcd.setCursor(0, 1);//Column, Row (Starts counting at 0)
@@ -423,10 +435,11 @@ void downButton() {
         String streamAllHalls = "";
 
         for (int j = 0; j <  column9numberHeads * column8numberHallsPerHead; j++) {
-          streamAllHalls = (streamAllHalls + uutVerbose[j] + ",");  //This meathod was atleast twice to three times faster verses my first implentation where I Serial.Printed each: Hall, Comma and Line feed
+          streamAllHalls = (streamAllHalls + uutVerbose[j] + ",");  //This method was atleast twice to three times faster verses my first implentation where I Serial.Printed each: Hall, Comma and Line feed
         }
         Serial.println(streamAllHalls);
       }
+
       colorWipe(strip.Color(0, 0, 0, 0), strip.Color(0, 0, 0, 0));
       editingRow = 2;
     } else {

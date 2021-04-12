@@ -112,7 +112,7 @@ void selectedReadSensors() {
         break;
     }
     for (int j = 0; j < column8numberHallsPerHead; j++) { // now that the head is selected read each of its HALLS
-      
+
       hallReading = ads.readADC_SingleEnded(j);
 
       uutVerbose[i * column8numberHallsPerHead + j] = hallReading; //write the Hall value into the verbose array
@@ -272,4 +272,34 @@ void scrollLongMessageLCD(String longMessage) {
 
   }
   lcd.blink();
+}
+void getUniqueTestID() {
+  // read a byte from the current address of the EEPROM
+  address1result = EEPROM.read(address1Location);
+  address2result = EEPROM.read(address2Location);
+
+
+  if (address1result < 255) {
+    address1result++;
+    EEPROM.write(address1Location, address1result);
+  }
+  else {
+    address1result = 0;
+    EEPROM.write(address1Location, address1result);
+
+    if (address2result < 255) {
+      address2result++;
+      EEPROM.write(address2Location, address2result);
+    }
+    else {
+      address2result = 0;
+      EEPROM.write(address2Location, address2result);
+    }
+  }
+
+
+  uniqueTestID = (address1result + (address2result * 256)) + ((float)readIdentifier * 0.01);
+
+
+
 }

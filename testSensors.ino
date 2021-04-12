@@ -69,11 +69,11 @@ void testSensors() {  //this is called at the userInput start button
   /*================================== collect all testing data =============================
     For RawData.csv -  //Note- limiations of the SD library limit to 8 caharacters for file names
     Here is a sample of what RawData.csv should look like:  Rows - There will only be: HEADS*HALLS=TOTAL ROWS
-    0-DATE, 1-TIME, 2-PART#, 3-SERIAL#, (4- MAX)  , (5-MIN) , (6-DIFF), (7-PASS), 8-HALL/HEAD, 9-HEADS, (10-HEAD#), (11- HALL#), 12-USER, 13-FIXTURE,
-    12/01/2018,8:08, 121248, B12345   ,    3500   , -589    , 4089    , 1       ,3           ,4       , 0         , 0          , JEFF   , 10,
-    12/01/2018,8:08, 121248, B12345   ,    3250   , -125    , 3375    , 1       ,3           ,4       , 0         , 1          , JEFF   , 10,
-    12/01/2018,8:08, 121248, B12345   ,    1250   , 25      , 1225    , 0       ,3           ,4       , 0         , 2          , JEFF   , 10,
-    12/01/2018,8:08, 121248, B12345   ,    1250   , 25      , 1225    , 0       ,3           ,4       , 1         , 0          , JEFF   , 10,
+    0-UniqueTestID, 0-DATE, 1-TIME, 2-PART#, 3-SERIAL#, (4- MAX)  , (5-MIN) , (6-DIFF), (7-PASS), 8-HALL/HEAD, 9-HEADS, (10-HEAD#), (11- HALL#), 12-USER, 13-FIXTURE,
+    10.1            12/01/2018,8:08, 121248, B12345   ,    3500   , -589    , 4089    , 1       ,3           ,4       , 0         , 0          , JEFF   , 10,
+    10.1            12/01/2018,8:08, 121248, B12345   ,    3250   , -125    , 3375    , 1       ,3           ,4       , 0         , 1          , JEFF   , 10,
+    10.1            12/01/2018,8:08, 121248, B12345   ,    1250   , 25      , 1225    , 0       ,3           ,4       , 0         , 2          , JEFF   , 10,
+    10.1            12/01/2018,8:08, 121248, B12345   ,    1250   , 25      , 1225    , 0       ,3           ,4       , 1         , 0          , JEFF   , 10,
 
     (These) values will be collected during the run, all others are static in test cycle and repeated in the file
 
@@ -128,6 +128,9 @@ void testSensors() {  //this is called at the userInput start button
   lcd.setCursor(0, 3);//Column, Row (Starts counting at 0)
   lcd.print(partNumberAndFolder);
 
+  getUniqueTestID();// this function reads the EEPROM and increments uniqueTestID for each test, only update after successfully accessing SD card
+
+
   for ( int i = 0; i < testingLoopCount; i++) {
     percentComplete = ((float(i) / float(testingLoopCount)));
     colorProgess(percentComplete);
@@ -169,6 +172,8 @@ void testSensors() {  //this is called at the userInput start button
   myFile.println(column12User);
   myFile.print("Tester Identifier: ,");
   myFile.println(readIdentifier);
+  myFile.print("Unique Test Identifier: ,");
+  myFile.println(uniqueTestID);
   myFile.print("The Set Current Difference Max Value: ,");
   myFile.println(diffMaxLimit);
   myFile.print("The Set Current Difference Min Value: ,");
@@ -223,7 +228,7 @@ void testSensors() {  //this is called at the userInput start button
   else {//Write the header to the RawData.csv only once at the top of the csv file
     myFile = SD.open("RawData.csv" , FILE_WRITE);
     //Print the first row of the RawData.csv and only print it once
-    myFile.println("0-Date, 1-Time, 2-Part#, 3-Serial#, 4-Max, 5-Min, 6-Diff, 7-Pass ,8-Halls/Head, 9-Head, 10-Head#, 11-Hall#, 12-User, 13-Set Diff Max, 14-Set Diff Min, 15-EEPROM Id,");
+    myFile.println("0-Test-ID, 1-Date, 2-Time, 3-Part#, 4-Serial#, 5-Max, 6-Min, 7-Diff, 8-Pass ,9-Halls/Head, 10-Head, 11-Head#, 12-Hall#, 13-User, 14-Set Diff Max, 15-Set Diff Min, 16-EEPROM Id, 17-SW Version, 18-SW Date");
   }
 
   if (myFile) {
@@ -244,44 +249,50 @@ void testSensors() {  //this is called at the userInput start button
   sensorTestReport = "REPORT HEAD:HALL-DIFF ";
 
   for (int k = 0; k < column9numberHeads * column8numberHallsPerHead; k++) {
-    myFile.print(todaysDate); //0-Date
+    myFile.print(uniqueTestID); //0-Test ID
     myFile.print(",");
-    myFile.print(timeNow); //1-Time
+    myFile.print(todaysDate); //1-Date
     myFile.print(",");
-    myFile.print(column2PartNumber); //2-Part#
+    myFile.print(timeNow); //2-Time
     myFile.print(",");
-    myFile.print(txtSerialNumber); //3-Serial#
+    myFile.print(column2PartNumber); //3-Part#
     myFile.print(",");
-    myFile.print(uutPassFail[k][0]); // 4-Max
+    myFile.print(txtSerialNumber); //4-Serial#
     myFile.print(",");
-    myFile.print(uutPassFail[k][1]); // 5-Min
+    myFile.print(uutPassFail[k][0]); // 5-Max
     myFile.print(",");
-    myFile.print(uutPassFail[k][2]); // 6-Dif
+    myFile.print(uutPassFail[k][1]); // 6-Min
+    myFile.print(",");
+    myFile.print(uutPassFail[k][2]); // 7-Dif
     myFile.print(",");
 
     if (uutPassFail[k][3] == 1) {
-      myFile.print("Pass,");  // 7-Pass/Fail
+      myFile.print("Pass,");  // 8-Pass/Fail
       sensorTestReport = sensorTestReport + (uutPassFail[k][4]) + ":" + (uutPassFail[k][5]) + "-" + (uutPassFail[k][2]) + " PASS,    ";
     } else {
       myFile.print("Fail,");
       uutPassed = false;  //at the beginning of this test, uutPassed was set to true, if any value fails it gets set to false
       sensorTestReport = sensorTestReport + (uutPassFail[k][4]) + ":" + (uutPassFail[k][5]) + "-" + (uutPassFail[k][2]) + " FAIL,    ";
     }
-    myFile.print(column8numberHallsPerHead); // 8-Halls / head
+    myFile.print(column8numberHallsPerHead); // 9-Halls / head
     myFile.print(",");
-    myFile.print(column9numberHeads); // 9-Halls / head
+    myFile.print(column9numberHeads); // 10-Halls / head
     myFile.print(",");
-    myFile.print(uutPassFail[k][4]); // 10-Head Number
+    myFile.print(uutPassFail[k][4]); // 11-Head Number
     myFile.print(",");
-    myFile.print(uutPassFail[k][5]); // 11-Hall Number
+    myFile.print(uutPassFail[k][5]); // 12-Hall Number
     myFile.print(",");
-    myFile.print(column12User); //12-User
+    myFile.print(column12User); //13-User
     myFile.print(",");
-    myFile.print(diffMaxLimit);
+    myFile.print(diffMaxLimit); //14-Set Diff Max
     myFile.print(",");
-    myFile.print(diffMinLimit);
+    myFile.print(diffMinLimit);//15-Set Diff Min
     myFile.print(",");
-    myFile.print(readIdentifier); //13-EEPROM Id
+    myFile.print(readIdentifier); //16-EEPROM Id
+    myFile.print(",");
+    myFile.print(softwareVersion); //17-SW Version
+    myFile.print(",");
+    myFile.print(softwareDate); //18-SW Date
     myFile.println(",");
   }
 
