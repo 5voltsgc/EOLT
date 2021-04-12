@@ -324,7 +324,7 @@ void setup() {
   lcd.clear();
 
   //=====================Real Time Clock=================
-  delay(50);  if (! rtc.begin()) {
+  if (! rtc.begin()) {
     lcd.print("Couldn't find RTC");
     lcd.setCursor(0, 1);//Column, Row (Starts counting at 0)
     lcd.print("No Date/Time will be ");
@@ -334,16 +334,15 @@ void setup() {
   }
   if (! rtc.initialized()) {
     lcd.clear();
-    lcd.print("RTC is NOT running!");//to fix this error you only have to upload the curent time
-    //look in examples for RTCLIB, and choose the pcf8523 example, un-comment out the computer time and upload, then reupload the EOLT program
+    lcd.print("RTC is NOT running!");
     lcd.setCursor(0, 1);//Column, Row (Starts counting at 0)
-    lcd.print("Date/Time not rec. ");
+    lcd.print("No Date/Time will be ");
     lcd.setCursor(0, 2);//Column, Row (Starts counting at 0)
-    lcd.print("please set time");
+    lcd.print("Recorded");
     delay(30000);
 
     // following line sets the RTC to the date & time this sketch was compiled
-    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+    //         rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
     // This line sets the RTC with an explicit date & time, for example to set
     // January 21, 2014 at 3am you would call:
     // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
