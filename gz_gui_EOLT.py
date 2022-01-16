@@ -54,7 +54,21 @@ users=[] # list to hold users - purhapse will change to Dictionary to make easie
 item_num_indx = 0 # used as a global index for which test
 noise_readings = 100 # how many readings for the noise check
 
-# 0-Part Numbers,1-Count Halls,2-halls/head,3-# heads,4-Selected,5-addressed,8-highMax,9-highMin,10-lowMax,11-lowMin,12-diffMax,13-diffLow
+# Item number column headers
+# 0-Part Numbers,
+# 1-Count Halls,
+# 2-halls/head,
+# 3-# heads,
+# 4-Selected,
+# 5-addressed,
+# 6-highMax,
+# 7-highMin,
+# 8-lowMax,
+# 9-lowMin,
+# 10-diffMax,
+# 11-diffLow
+# 12-Harness item number 
+# 13-Fixture item number 
 item_numbers = np.array([[107287,8,2,4,1,0,1000,700,-600,-900,1000,-50,204109,124458],
                         [107297,8,2,4,1,0,1000,700,-600,-900,818,560,204109,124458],
                         [108144,8,2,4,1,0,1000,700,-600,-900,1000,-50,204109,124458],
@@ -150,25 +164,49 @@ def addressed_read_all_halls():
                 GPIO.output(head_select_3, GPIO.LOW)
             
             if i == 0:
-#                 print("0 - Hall Number: " + str(addressed_hall_number))
+                # print("0 - Hall Number: " + str(addressed_hall_number))
                 try:
                     hall_readings.append(ads0.value)
                 except OSError as e:
-                    print("OSError hall_readings.append(ads0.value)")
+                    print("OSError at hall_readings.append(ads0.value)")
                     print(e)
+                    # Try again and continue and learn if just trying to read the ADS crashes again.
+                    # This is from an OSError with the adafruit library - found a different library
+                    # http://abyz.me.uk/lg/examples.html
                     hall_readings.append(ads0.value)
+                    
                 
             elif i == 1:
-#                 print("1 - Hall Number: " + str(addressed_hall_number))
-                hall_readings.append(ads1.value)
+                # print("1 - Hall Number: " + str(addressed_hall_number))
+                try:
+                    hall_readings.append(ads1.value)
+                except OSError as e:
+                    print("OSError at hall_readings.append(ads1.value)")
+                    print(e)
+                    # try again 
+                    hall_readings.append(ads1.value)
+                                   
                 
             elif i == 2:
-#                 print("2 - Hall Number: " + str(addressed_hall_number))
-                hall_readings.append(ads2.value)
+                # print("2 - Hall Number: " + str(addressed_hall_number))
+                try:
+                    hall_readings.append(ads2.value)
+                except OSError as e:
+                    print("OSError at hall_readings.append(ads2.value)")
+                    print(e)
+                    # try again 
+                    hall_readings.append(ads2.value)
             
             else:
-#                 print("3 - Hall Number: " + str(addressed_hall_number))
-                hall_readings.append(ads3.value)
+                # print("3 - Hall Number: " + str(addressed_hall_number))
+                try:
+                    hall_readings.append(ads3.value)
+                except OSError as e:
+                    print("OSError at hall_readings.append(ads3.value)")
+                    print(e)
+                    # try again 
+                    hall_readings.append(ads3.value)
+
      
 #     print(hall_readings)
     return(hall_readings)
@@ -253,7 +291,8 @@ def begin_test():
     noise_results = df.iloc[:noise_readings, 0:((HALLS * HEADS))].diff(axis=0, periods = 1).abs().max().to_frame()
     noise_results.columns = ['Noise']
     
-    report_txt += str(noise_results) + "\n"
+    
+    report_txt += str(noise_results.T) + "\n"
     result_txtbox.value = report_txt
     
     # return the plate back home
