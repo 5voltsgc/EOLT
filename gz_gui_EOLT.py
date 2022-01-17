@@ -15,7 +15,7 @@ i2c = busio.I2C(board.SCL, board.SDA)
 
 # Create the ADC object using the I2C bus
 ads = ADS.ADS1015(i2c)
-
+# Stepper Motor and Sensor head GPIO addresses
 DIR = 27   # Direction GPIO Pin
 STEP = 17  # Step GPIO Pin
 CW = 1     # Clockwise Rotation Plate towards home
@@ -25,12 +25,11 @@ head_select_0 = 23
 head_select_1 = 24
 head_select_2 = 25
 head_select_3 = 12
-
+#Set up the analog to digital pins
 ads0 = AnalogIn(ads, ADS.P0)
 ads1 = AnalogIn(ads, ADS.P1)
 ads2 = AnalogIn(ads, ADS.P2)
 ads3 = AnalogIn(ads, ADS.P3)
-
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(head_select_0, GPIO.OUT)
@@ -42,8 +41,12 @@ GPIO.setup(DIR, GPIO.OUT)
 GPIO.output(DIR, CW)
 GPIO.setup(5, GPIO.IN, pull_up_down=GPIO.PUD_UP) # Set pin 5 to be an input pin and set initial value to be pulled low (off)
 GPIO.setup(21, GPIO.IN, pull_up_down=GPIO.PUD_UP) # Set pin 21 to be an input pin and set initial value to be pulled low (off)
+
+# Initiallizing the Home Switch on pin 5
 pin5 = GPIO.input(5)
-pin21 = GPIO.input(21)
+
+# pin21 = GPIO.input(21) # to be used for the power down Raspberry Pi
+
 GPIO.setup(ENB, GPIO.OUT)
 HALLS = 6
 HEADS = 3
@@ -68,17 +71,18 @@ noise_readings = 100 # how many readings for the noise check
 # 10-diffMax,
 # 11-diffLow
 # 12-Harness item number 
-# 13-Fixture item number 
-item_numbers = np.array([[107287,8,2,4,1,0,1000,700,-600,-900,1000,-50,204109,124458],
-                        [107297,8,2,4,1,0,1000,700,-600,-900,818,560,204109,124458],
-                        [108144,8,2,4,1,0,1000,700,-600,-900,1000,-50,204109,124458],
-                        [108150,8,2,4,1,0,1000,700,-600,-900,885,654,204109,124458],
-                        [112497,6,2,3,1,0,1000,700,-600,-900,1000,-50,301404,124734],
-                        [121248,12,3,4,1,0,1000,700,-600,-900,728,460,301393,124393],
-                        [121250,18,6,3,0,1,1000,700,-600,-900,609,423,301400,124394],
-                        [121334,15,5,3,0,1,1000,700,-600,-900,1000,-50,301401,124742],
-                        [121335,15,5,3,0,1,1000,700,-600,-900,1000,-50,301401,124740],
-                        [121791,12,6,2,0,1,1000,700,-600,-900,1000,-50,301400,124394]])
+# 13-Fixture item number
+# 14-Noise Threshold
+item_numbers = np.array([[107287,8,2,4,1,0,1000,700,-600,-900,1000,-50,204109,124458,200],
+                        [107297,8,2,4,1,0,1000,700,-600,-900,818,560,204109,124458,200],
+                        [108144,8,2,4,1,0,1000,700,-600,-900,1000,-50,204109,124458,200],
+                        [108150,8,2,4,1,0,1000,700,-600,-900,885,654,204109,124458,200],
+                        [112497,6,2,3,1,0,1000,700,-600,-900,1000,-50,301404,124734,200],
+                        [121248,12,3,4,1,0,1000,700,-600,-900,728,460,301393,124393,200],
+                        [121250,18,6,3,0,1,1000,700,-600,-900,609,423,301400,124394,200],
+                        [121334,15,5,3,0,1,1000,700,-600,-900,1000,-50,301401,124742,200],
+                        [121335,15,5,3,0,1,1000,700,-600,-900,1000,-50,301401,124740,200],
+                        [121791,12,6,2,0,1,1000,700,-600,-900,1000,-50,301400,124394,200]])
                             
 print(item_numbers)
 # Create the item numbers for the Combobox
@@ -290,9 +294,12 @@ def begin_test():
     # Calculate noise - 1st derivitive
     noise_results = df.iloc[:noise_readings, 0:((HALLS * HEADS))].diff(axis=0, periods = 1).abs().max().to_frame()
     noise_results.columns = ['Noise']
+    noise_results["Halls"] = plotlegend
+#     Dump noise result to a file?
+#     noise_results.to_csv('noise_results.csv', sep=',')
     
     
-    report_txt += str(noise_results.T) + "\n"
+    report_txt += str(noise_results) + "\n"
     result_txtbox.value = report_txt
     
     # return the plate back home
@@ -307,6 +314,70 @@ def begin_test():
     # Turn on the stepper motor controller
     GPIO.output(ENB, False)
     GPIO.cleanup()
+    
+    # Make the Counts chart
+    plt.plot(readings_table)
+    plt.rcParams["figure.figsize"] = [7.50, 3.50] 
+    plt.xlabel('Steps')
+    plt.ylabel('Counts')
+    plt.savefig('Counts.png')
+    
+    # plt.show() # if you would like a window pop up
+    # Make Noise Chart
+    #https://www.tutorialspoint.com/how-to-create-a-matplotlib-bar-chart-with-a-threshold-line
+    plt.rcParams["figure.figsize"] = [7.50, 3.50]
+    # plt.rcParams["figure.autolayout"] = True
+    threshold = item_numbers[item_num_indx][14] # 14 is the threshold
+    a_threshold = np.maximum(noise_results["Noise"] - threshold, 0)
+    b_threshold = np.minimum(noise_results["Noise"], threshold)
+    x = range(HALLS * HEADS)
+    fig, ax = plt.subplots()
+    ax.bar(x, b_threshold, 0.35, color="green")
+    ax.bar(x, a_threshold, 0.35, color="red", bottom=b_threshold)
+    plt.axhline(threshold, color='red', ls='dotted')
+    plt.savefig('Noise.png')
+    
+    # Now resize saved figures for the GUI
+    
+    # Create PDF report
+    pdf = FPDF('P', 'mm', 'letter')
+    pdf.add_page()
+    pdf.image('EOLT_report.png', x = 0, y = 0, w = 203, h = 279, type = 'PNG')
+    pdf.image('Noise.png', x = 0, y = 55, w = 97, h = 82, type = 'PNG')
+    pdf.image('Counts.png', x = 100, y = 55, w = 97, h = 82, type = 'PNG')
+    pdf.set_font('helvetica', 'B', 16)
+    pdf.text(23, 40, '121250')
+    pdf.text(23, 51.5, 'January 3, 2022')
+    pdf.text(127, 40, 'B12345')
+    pdf.text(127, 51.5, '01032022r12m3')
+    #set font for results
+    pdf.set_font('helvetica', size=10)
+    
+    
+    # Creating an empty list
+    rows = []
+    # Iterating through the columns of
+    # dataframe
+    results = noise_results[['Halls', 'Noise']]
+    for column in results.columns:
+        # Storing the rows of a column
+        # into a temporary list
+        li = results[column].tolist()
+         # appending the temporary list
+        rows.append(li)
+
+    print(f"Rows {rows}")
+    print("plot legend")
+    print(plotlegend)
+    print(f"second column in rows {rows[1]}")
+    row_pos=200 #counter for which row in loop
+    for row in (rows):
+        pdf.text(10, row_pos,str(row))
+        print(row)
+        row_pos += 5
+
+#     pdf.write(5, str(results))
+    pdf.output('tuto1.pdf', 'F')
     
     
         
